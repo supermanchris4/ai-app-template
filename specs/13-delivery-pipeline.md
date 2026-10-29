@@ -1,0 +1,69 @@
+# Delivery pipeline
+
+How changes move from a pull request to production, in GitHub Actions workflows in `.github/workflows/`. This is where the SDLC gates bind to the tooling (Standard D-07 and D-15).
+
+## Environments and gates
+
+| GitHub Environment | Deploys | Gate |
+|---|---|---|
+| `dev` | Automatically on every merge to `main` | Required pull request review and passing checks before merge |
+| `test` | The image already running in `dev`, on request | Required reviewers; deployment from `main` only |
+| `prod` | The image already running in `test`, on request | Required reviewers; deployment from `main` only |
+
+Each merge to `main` produces one build: one API image, identified by its digest, and one web build. The same build is deployed to `dev`, then `test`, then `prod`, with only the configuration differing ([10-architecture.md](10-architecture.md#environments)). Nothing is rebuilt for `test` or `prod`.
+
+## Workflows
+
+| Workflow | Trigger | What it does |
+|---|---|---|
+| `ci.yml` | Every pull request, and pushes to `main` | The checks below. Required to pass before merge. |
+| `infra-plan.yml` | Pull requests that change `infra/` | `terraform plan` for each environment with the read-only role, posted to the pull request |
+| `infra-apply.yml` | Merge to `main` changing `infra/`, or on request | `terraform apply` for `dev`, then `test` and `prod` through their approved environments |
+| `deploy.yml` | Merge to `main`, or on request with an environment | On merge, builds once and deploys to `dev`. On request, deploys an existing build to the chosen environment |
+| `bootstrap.yml` | Not used | The bootstrap runs from an operator's machine with their own credentials ([12-aws-deployment.md](12-aws-deployment.md#account-bootstrap)) |
+
+## Pull request checks
+
+| Area | Checks |
+|---|---|
+| API | Ruff lint and format check, Pyright in strict mode, unit tests, integration tests against a PostgreSQL service container, coverage thresholds |
+| Web interface | ESLint, Prettier check, TypeScript type check, Vitest, build, Playwright and accessibility checks against the built app |
+| Contract | The OpenAPI document generated from the API matches the committed one used to generate the web client |
+| Infrastructure | `terraform fmt -check`, `terraform validate`, infrastructure security scanning |
+| Images | Build the API image; scan it for vulnerabilities |
+| Security | Code scanning, dependency review and secret scanning (GitHub's own features where the plan provides them, otherwise open-source equivalents such as gitleaks) |
+
+## Application deployment
+
+On merge to `main`:
+
+1. Build the API image once, tagged with the commit SHA, and push it to ECR in `dev`. Record its digest.
+2. Build the web interface once and keep it as a workflow artefact. The bundle holds no environment-specific values; the environment name is supplied at deployment in a generated `config.json`.
+3. Deploy to `dev` as below.
+
+To deploy to an environment:
+
+1. If the environment is in a different AWS account from `dev`, copy the image unchanged into that account's ECR repository. The digest stays the same, which shows it is the same build.
+2. Run the migration task once, with the migration user's credentials, and stop if it fails.
+3. Register a new task definition revision with the image digest and the environment's API settings (from GitHub variables), and update the ECS service. Wait for it to become stable; the circuit breaker rolls back a failed deployment.
+4. Upload the web build to the environment's bucket (hashed assets first, then `index.html` and `config.json`) and invalidate the CloudFront cache for HTML and `config.json`.
+5. Call `/api/health` through CloudFront and fail the deployment if it does not return 200.
+
+## Authentication to AWS
+
+- Workflows authenticate through OIDC. No AWS access keys are stored in GitHub.
+- Deploy roles trust only the repository's immutable ID and the named GitHub Environment, so a renamed or transferred repository cannot assume them.
+- Plans on pull requests use a read-only role.
+
+## Variables and secrets
+
+- Role ARNs, the region, network IDs, the state bucket and other identifiers are **GitHub variables**, not secrets, scoped to the GitHub Environment where they differ by environment.
+- Any sensitive value a workflow needs is read from Secrets Manager at run time through OIDC. Where a GitHub secret is unavoidable, it is scoped to an environment behind required reviewers.
+- Push protection and secret scanning are on for the repository where the GitHub plan provides them, the pull request checks run a secret scan, and developers run the pre-commit secret scan (`.pre-commit-config.yaml`).
+
+## Workflow hardening
+
+- Every third-party action is pinned to a full commit SHA, with the version in a comment. Dependabot proposes updates.
+- `permissions: {}` at the top of each workflow; each job is granted only the permissions it needs (for example `id-token: write` and `contents: read` for a deploy job).
+- Jobs run on GitHub-hosted runners.
+- `pull_request_target` is not used.

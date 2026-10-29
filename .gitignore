@@ -1,0 +1,10 @@
+# Secrets and local settings
+.env
+.env.*
+!.env.example
+*.tfvars
+
+# Editor and OS files
+.vscode/
+.DS_Store
+Thumbs.db

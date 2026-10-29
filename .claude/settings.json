@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(uv sync:*)",
+      "Bash(uv lock:*)",
+      "Bash(uv run --directory apps/api pytest:*)",
+      "Bash(uv run --directory apps/api ruff:*)",
+      "Bash(uv run --directory apps/api pyright:*)",
+      "Bash(uv run --directory apps/api alembic revision:*)",
+      "Bash(npm --prefix apps/web ci)",
+      "Bash(npm --prefix apps/web run lint:*)",
+      "Bash(npm --prefix apps/web run typecheck)",
+      "Bash(npm --prefix apps/web run test:*)",
+      "Bash(npm --prefix apps/web run build)",
+      "Bash(npm --prefix apps/web run generate-api)",
+      "Bash(docker compose -f infra/local/docker-compose.yml:*)",
+      "Bash(terraform -chdir=infra/aws fmt:*)",
+      "Bash(terraform -chdir=infra/aws validate)",
+      "Bash(terraform -chdir=infra/bootstrap fmt:*)",
+      "Bash(pre-commit run:*)"
+    ],
+    "deny": [
+      "Read(**/.env)",
+      "Edit(**/.env)",
+      "Read(**/.env.local)",
+      "Edit(**/.env.local)",
+      "Read(**/.env.*.local)",
+      "Edit(**/.env.*.local)",
+      "Read(**/*.tfvars)",
+      "Edit(**/*.tfvars)",
+      "Read(**/*.tfstate)",
+      "Read(**/*.tfstate.*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(~/.aws/**)",
+      "Read(~/.ssh/**)",
+      "Bash(terraform apply:*)",
+      "Bash(terraform -chdir=infra/aws apply:*)",
+      "Bash(terraform destroy:*)",
+      "Bash(terraform -chdir=infra/aws destroy:*)",
+      "Bash(aws:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}
