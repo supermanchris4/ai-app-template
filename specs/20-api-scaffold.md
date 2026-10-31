@@ -95,7 +95,7 @@ There is no setting that turns authentication off, and no cross-origin (CORS) se
 - The API connects as the application's runtime database user, which can read and write data but cannot change the schema. Only the migration step connects as the migration user ([12-aws-deployment.md](12-aws-deployment.md#database)).
 - In deployed environments, `database.py` fetches the runtime user's credentials from Secrets Manager (`DATABASE_CREDENTIALS_SECRET_ARN`) when it opens a connection, and reuses them for `DATABASE_CREDENTIALS_CACHE_SECONDS`. If a connection fails authentication, it fetches the credentials again once before failing. A rotated password is therefore picked up without a redeployment (Standard D-13).
 - Connections use TLS with `sslmode=verify-full`, verifying the server against the Amazon RDS certificate bundle copied into the image.
-- The session dependency yields a session, commits on success, rolls back on exception and always closes the session.
+- The session dependency yields a session, commits on success, rolls back on exception and always closes the session. It is declared with `Depends(get_db, scope="function")`, so the commit happens before the response is sent. With FastAPI's default scope, the code after `yield` runs once the response has gone, and a client could act on a write that is not yet committed, or be told a write succeeded when its commit then fails.
 
 ## Authentication and authorisation
 
