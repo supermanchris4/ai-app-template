@@ -2,6 +2,8 @@
 
 How changes move from a pull request to production, in GitHub Actions workflows in `.github/workflows/`. This is where the SDLC gates bind to the tooling (Standard D-07 and D-15).
 
+The platform packages do not yet include these workflows, so the application writes them from this specification until the standard's work plan item F03.3 releases them as reusable workflows in `ai-app-platform` ([10-architecture.md](10-architecture.md#platform-packages)).
+
 ## Environments and gates
 
 | GitHub Environment | Deploys | Gate |

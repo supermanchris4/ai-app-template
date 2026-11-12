@@ -59,6 +59,26 @@ flowchart LR
 
 These are the template's working versions (Standard configuration default C-02). Each is pinned in the places listed and changed in all of them in the same change. Dependabot proposes patch and minor updates; a major version change is a deliberate change across the listed files.
 
+## Platform packages
+
+The platform code every application needs is released as packages from [`ai-app-platform`](https://github.com/supermanchris4/ai-app-platform), a public repository. An application installs each at a released version and keeps no copy of its code. It writes only what the last column lists. A fix to platform code is made in `ai-app-platform` and reaches an application as a new version. Each package's README says how to use it, and its `CHANGELOG.md` says what each version changed.
+
+| Package | Provides | Installed in | Version | The application writes |
+|---|---|---|---|---|
+| API platform, `ai_app_platform` | Settings, logging, database access, middleware, error handling, the health and sign-in endpoints, sign-in and access, audit recording, the template tables, and test helpers ([20-api-scaffold.md](20-api-scaffold.md#directory-structure)) | `apps/api/pyproject.toml`, from its `api-v{version}` git tag | 0.1.1 | Its settings, its engine and session factory, the call that configures the platform, its roles, its domain code and its migrations |
+| Web platform, `@supermanchris4/ai-app-platform-web` | The API client, the session provider and route guard, sign-in navigation, the error notice, the environment banner, `config.json`, local dates and navigation links ([40-ui.md](40-ui.md#template-conventions)) | `apps/web/package.json`, from GitHub Packages | 0.1.0 | `src/lib/api.ts`, its pages, its component kit and its Tailwind theme |
+| Mock identity provider, `ghcr.io/supermanchris4/ai-app-platform-mock-idp` | The local OpenID Connect provider ([11-local-development.md](11-local-development.md#local-mock-identity-provider)) | `infra/local/docker-compose.yml`, pinned by digest | 0.1.0 | Its roles and synthetic people, in `infra/local/mock-idp.json` |
+
+The versions above are the ones the template was last checked against; an application records its own in the files listed. An application upgrades the platform packages on purpose, not through Dependabot, after reading the changelog.
+
+**Not yet in the packages.** The application writes these itself, from the specifications, until the standard's work plan item named provides them:
+
+| What | Specified in | Work plan item |
+|---|---|---|
+| External users: the external issuer's sign-in, sessions and tokens, with the `external` actor type | [50-auth.md](50-auth.md) | F03.5 |
+| The directory lookup endpoint | [20-api-scaffold.md](20-api-scaffold.md#directory-lookup) | F03.4 |
+| The Terraform for each concern, and the pull request, infrastructure and deployment workflows | [12-aws-deployment.md](12-aws-deployment.md), [13-delivery-pipeline.md](13-delivery-pipeline.md) | F03.3 |
+
 ## API layers
 
 | Layer | Directory | Responsibility |

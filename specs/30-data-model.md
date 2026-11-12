@@ -42,7 +42,7 @@ Per table, record the classification and whether the table holds personal inform
 
 ## Template tables
 
-The template provides two tables. Their core columns are not changed.
+The template provides two tables, defined by the API platform package. The application's first migration creates them by calling `create_platform_tables(entity_types=[...])` from `ai_app_platform.migrations`, with the entity types it audits, and its models attach the same entity-type check to the platform's model. Their core columns are not changed.
 
 **`audit_records`** holds the audit trail, with the fields in [31-audit.md](31-audit.md#audit-record-fields). Applications extend the permitted `entity_type` and `action` values.
 
@@ -53,12 +53,13 @@ The template provides two tables. Their core columns are not changed.
 | `id` | UUID | No | Primary key |
 | `token_hash` | BYTEA | No | SHA-256 of the cookie value; unique |
 | `csrf_token` | VARCHAR(64) | No | Returned by `GET /api/auth/session` |
-| `provider` | VARCHAR | No | `internal` or `external` |
+| `provider` | VARCHAR | No | `internal` or `external`. Version 0.1 of the package permits `internal` only (the standard's work plan item F03.5) |
 | `subject` | VARCHAR | No | The claim named by `AUTH_SUBJECT_CLAIM` |
 | `actor_type` | VARCHAR | No | `internal` or `external` |
 | `display_name` | VARCHAR | Yes | |
 | `roles` | JSONB | No | Roles at sign-in |
 | `created_at` | TIMESTAMPTZ | No | |
+| `updated_at` | TIMESTAMPTZ | No | |
 | `last_used_at` | TIMESTAMPTZ | No | |
 | `expires_at` | TIMESTAMPTZ | No | Sign-in time plus `SESSION_MAX_HOURS` |
 

@@ -19,6 +19,7 @@ The rules Claude must follow when generating code in this repository. They overr
 - Resolve a decision the specifications leave open, or depart from a template specification, without an ADR in [adrs/](../adrs/).
 - Create generic "update arbitrary fields" endpoints. Every change is an explicit operation.
 - Add infrastructure the baseline does not include (caches, message brokers, tracing stacks, extra databases, reverse proxies) without an ADR.
+- Write, copy or change code the platform packages provide ([10-architecture.md](10-architecture.md#platform-packages)). A fix or a missing feature is raised in `ai-app-platform` and reaches the application as a new version.
 
 ## Business rules and validation
 

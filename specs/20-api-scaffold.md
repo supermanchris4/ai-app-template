@@ -4,39 +4,26 @@ The structure, settings and cross-cutting behaviour of the API in `apps/api/`. D
 
 ## Directory structure
 
+The platform code is the API platform package, `ai_app_platform`, installed at a released version ([10-architecture.md](10-architecture.md#platform-packages)). The application's repository holds only its own code:
+
 ```
 apps/api/
-├── main.py                     FastAPI app, middleware, exception handlers, routers
-├── settings.py                 The settings declaration (see Settings)
-├── database.py                 Engine, session factory, credential provider
-├── dependencies.py             Database session and authentication dependencies
-├── auth/
-│   ├── providers.py            Internal and external identity providers, from OIDC discovery
-│   ├── web_sign_in.py          Authorisation code flow, as a confidential client
-│   ├── sessions.py             Server-side sign-in sessions and the session cookie
-│   ├── csrf.py                 Cross-site request forgery checks
-│   ├── tokens.py               Bearer access token validation
-│   ├── context.py              AuthContext and ActorType
-│   └── roles.py                The application's app roles and require_role
+├── main.py                     FastAPI app: configures the platform, adds its middleware and error handlers, includes the routers
+├── settings.py                 The application's settings, extending the platform's PlatformSettings (see Settings)
+├── database.py                 The engine and session factory, from the platform's create_database_engine
+├── dependencies.py             The application's role dependencies, on the platform's authenticate
+├── models.py                   SQLAlchemy models on the platform's Base; attaches the application's audit entity types
 ├── domain/
 │   ├── models.py               Domain models (dataclasses)
-│   ├── enums.py                Domain enums
+│   ├── enums.py                Domain enums, including the application's roles
 │   └── exceptions.py           Domain exception hierarchy
 ├── repositories/
 ├── services/
-│   └── audit_service.py        Audit recording
-├── routes/
-│   ├── health.py               GET /api/health
-│   ├── auth.py                 /api/auth/ sign-in endpoints
-│   └── directory.py            Directory lookup (optional)
-├── schemas/
-│   └── common.py               Error, pagination and shared schemas
-├── middleware/
-│   ├── correlation.py          Correlation and request IDs
-│   └── request_logging.py      Request logging
-├── logging_config.py           JSON log formatter
+├── routes/                     The application's versioned routes
+│   └── directory.py            Directory lookup (optional; not yet in the platform)
+├── schemas/                    The application's request and response models
 ├── jobs/                       Entry points for scheduled ECS tasks
-├── alembic/                    Migrations
+├── alembic/                    Migrations; the first creates the template tables (30-data-model.md)
 ├── tests/
 │   ├── conftest.py
 │   ├── unit/
@@ -48,9 +35,27 @@ apps/api/
 └── README.md
 ```
 
+What the package provides, by module of `ai_app_platform`:
+
+| Module | Provides |
+|---|---|
+| `config` | `configure(settings=..., session_factory=..., after_authentication=...)`: what the application gives the platform once, at start-up |
+| `settings` | `PlatformSettings`, with the settings and deployed-environment checks below |
+| `database` | The declarative `Base`, `create_database_engine` and the Secrets Manager credential provider |
+| `dependencies` | `get_db`, `DbSession`, `authenticate` and `Auth` |
+| `auth` | Providers from discovery, web sign-in, sessions, cross-site request forgery checks, bearer token validation, `AuthContext`, `ActorType` and `require_role` |
+| `audit` | The `audit_records` model and `AuditService` ([31-audit.md](31-audit.md)) |
+| `middleware` | Correlation and request IDs, request logging, and the unexpected-error handler |
+| `errors` | The error response shape, `error_body` and `install_error_handlers` |
+| `routes` | `GET /api/health` and the `/api/auth/` sign-in endpoints |
+| `schemas` | The error and pagination schemas |
+| `migrations` | `create_platform_tables`, and `grant_runtime` and `revoke_runtime` for the runtime database user |
+| `logging_config` | The JSON log formatter |
+| `testing` | `TestIssuer`, the test key pair the application's tests sign tokens with |
+
 ## Settings
 
-Every setting is declared once, in `settings.py`, as a Pydantic Settings model. Each declaration states its type, its default (or that it is required) and whether it is secret. Settings are validated when the API starts, and the API refuses to start if validation fails. Secret settings are typed `SecretStr`, so they are never printed or logged.
+Every setting is declared once, as a Pydantic Settings model. The platform's `PlatformSettings` declares those below, apart from `DIRECTORY_ENABLED`; the application's `Settings`, in `settings.py`, extends it with that and its own settings, and gives the platform its settings through `configure`. Each declaration states its type, its default (or that it is required) and whether it is secret. Settings are validated when the API starts, and the API refuses to start if validation fails. Secret settings are typed `SecretStr`, so they are never printed or logged.
 
 | Setting | Type | Default | Secret | Notes |
 |---|---|---|---|---|
@@ -99,11 +104,11 @@ There is no setting that turns authentication off, and no cross-origin (CORS) se
 
 ## Authentication and authorisation
 
-The model is in [50-auth.md](50-auth.md). The scaffold implements it as follows.
+The model is in [50-auth.md](50-auth.md). The API platform package implements it as follows; the modules named are within `ai_app_platform`. Version 0.1 implements the internal issuer only: the external issuer's settings and discovery are in place, but its sign-in, sessions and tokens are not, so an application with external users writes them until the standard's work plan item F03.5 provides them.
 
-**Providers.** `auth/providers.py` reads each provider's discovery document at start-up and caches it, including the issuer, the endpoints and the signing keys. Keys are refreshed when an unknown key ID appears. Tokens are validated against the issuer the discovery document gives, and the API refuses to start if the discovery document cannot be read.
+**Providers.** `auth.providers` reads each provider's discovery document at start-up and caches it, including the issuer, the endpoints and the signing keys. Keys are refreshed when an unknown key ID appears. Tokens are validated against the issuer the discovery document gives, and the API refuses to start if the discovery document cannot be read.
 
-**Sign-in endpoints** (`routes/auth.py`, unversioned because they are part of the platform rather than the business API):
+**Sign-in endpoints** (`routes.auth`, unversioned because they are part of the platform rather than the business API):
 
 | Endpoint | Purpose |
 |---|---|
@@ -112,26 +117,28 @@ The model is in [50-auth.md](50-auth.md). The scaffold implements it as follows.
 | `GET /api/auth/session` | Returns the signed-in person's display name, actor type, roles and the session's cross-site request forgery token, or 401 |
 | `POST /api/auth/logout` | Deletes the session, clears the cookie and returns the provider's sign-out address |
 
-**Sessions.** `auth/sessions.py` stores sessions in the `auth_sessions` table ([30-data-model.md](30-data-model.md#template-tables)). The cookie value is 32 random bytes; the table holds its SHA-256 hash. Each request with the cookie updates the session's last-used time, at most once a minute. Expired sessions are removed by a scheduled job.
+**Sessions.** `auth.sessions` stores sessions in the `auth_sessions` table ([30-data-model.md](30-data-model.md#template-tables)). The cookie value is 32 random bytes; the table holds its SHA-256 hash. Each request with the cookie updates the session's last-used time, at most once a minute. Expired sessions are removed by a scheduled job.
 
-**Request authentication.** `dependencies.py` resolves every request except `/api/health` and the sign-in endpoints in this order:
+**Request authentication.** `dependencies.authenticate` resolves every request except `/api/health` and the sign-in endpoints in this order:
 
-1. An `Authorization: Bearer` header is validated by `auth/tokens.py`: signature, issuer (the internal or external provider), audience (that provider's client ID), expiry, not-before and algorithm (`RS256`). A delegated token must include `AUTH_USER_SCOPE`; an app-only token must carry at least one role.
-2. Otherwise, a valid, unexpired `__Host-session` cookie is used. For state-changing methods, `auth/csrf.py` also checks the `X-CSRF-Token` header and that the `Origin` header matches `APP_PUBLIC_URL`.
+1. An `Authorization: Bearer` header is validated by `auth.tokens`: signature, issuer (the internal or external provider), audience (that provider's client ID), expiry, not-before and algorithm (`RS256`). A delegated token must include `AUTH_USER_SCOPE`; an app-only token must carry at least one role.
+2. Otherwise, a valid, unexpired `__Host-session` cookie is used. For state-changing methods, `auth.csrf` also checks the `X-CSRF-Token` header and that the `Origin` header matches `APP_PUBLIC_URL`.
 3. Otherwise the request is refused with 401.
 
-`AuthContext` holds the subject (the claim named by `AUTH_SUBJECT_CLAIM`), the actor type, the provider, the display name where present and the roles. `require_role(*roles)` is a dependency factory that returns the `AuthContext` when the caller holds at least one of the listed roles, and raises an authorisation error otherwise. There is no role hierarchy.
+After a caller is authenticated, the platform calls the application's `after_authentication` hook, if `configure` was given one, for the application's own per-request work; it may refuse the request.
+
+`AuthContext` holds the subject (the claim named by `AUTH_SUBJECT_CLAIM`), the actor type, the provider, the display name where present and the roles. `require_role(authenticate, *roles)` is a dependency factory, which the application's `dependencies.py` uses to declare its role dependencies. It returns the `AuthContext` when the caller holds at least one of the listed roles, and raises an authorisation error otherwise. There is no role hierarchy.
 
 A missing, expired or invalid token or session returns 401, and a failed cross-site request forgery check or missing role returns 403. No response says which check failed. The reason is logged without the token or cookie.
 
 ## Actor types
 
-`ActorType` is defined once in `auth/context.py`, separate from roles:
+`ActorType` is defined once in the platform's `auth.context`, separate from roles:
 
 | Value | Who |
 |---|---|
 | `internal` | A person signed in through the internal provider |
-| `external` | A person signed in through the external provider, directly or through a consumer acting for them |
+| `external` | A person signed in through the external provider, directly or through a consumer acting for them. Not yet in the package (F03.5) |
 | `system` | Another system using an app-only token |
 | `job` | A scheduled task of this application, with the job name as the subject |
 
@@ -150,9 +157,11 @@ Defined in `domain/exceptions.py`. Each accepts a message and an optional list o
 | `InvalidStateError` | 409 | `CONFLICT` |
 | `AuthorisationError` | 403 | `FORBIDDEN` |
 
-`main.py` registers handlers that turn domain exceptions, request validation failures and unexpected errors into the error response in [21-api.md](21-api.md#error-response). Unexpected errors return `INTERNAL_ERROR` without internal detail and are logged with the stack trace.
+`main.py` registers handlers that turn the application's domain exceptions into the error response, and calls the platform's `install_error_handlers`, which does the same for authentication and access failures, request validation failures and unexpected errors, in the error response in [21-api.md](21-api.md#error-response). Unexpected errors return `INTERNAL_ERROR` without internal detail and are logged with the stack trace.
 
 ## Middleware
+
+The platform's `middleware` module provides both, and the application adds them in `main.py`.
 
 **Correlation.** Reads `X-Correlation-ID` from the request or generates a UUID, generates an `X-Request-ID` for every request, stores both on the request state and in a context variable for logging, and returns both in the response headers.
 
@@ -162,11 +171,11 @@ There is no rate limiting in the API. Rate-based rules are applied by AWS WAF at
 
 ## Logging
 
-`logging_config.py` configures one JSON formatter for all loggers, writing one JSON object per line to standard output. Every line includes the timestamp (UTC, ISO 8601), level, logger, message, correlation ID and request ID, plus every field passed through `extra`. Personal information (including names, email addresses and subject identifiers), tokens, cookies, passwords and connection strings are never logged, and the formatter drops any `extra` field named in its deny list (`authorization`, `cookie`, `token`, `password`, `email`, `name`, `oid`, `subject`). Path templates are logged rather than full paths, so identifiers in URLs are not.
+The platform's `logging_config` configures one JSON formatter for all loggers, writing one JSON object per line to standard output. Every line includes the timestamp (UTC, ISO 8601), level, logger, message, correlation ID and request ID, plus every field passed through `extra`. Personal information (including names, email addresses and subject identifiers), tokens, cookies, passwords and connection strings are never logged, and the formatter drops any `extra` field named in its deny list (`authorization`, `cookie`, `token`, `password`, `email`, `name`, `oid`, `subject`). Path templates are logged rather than full paths, so identifiers in URLs are not.
 
 ## Health endpoint
 
-`GET /api/health` needs no authentication. It runs `SELECT 1` against the database and returns:
+`GET /api/health`, from the platform's `routes.health`, needs no authentication. It runs `SELECT 1` against the database and returns:
 
 - 200 with `{"status": "healthy", "version": "...", "timestamp": "..."}` when the database responds
 - 503 with `{"status": "unhealthy", "checks": {"database": "unavailable"}}` when it does not
@@ -175,7 +184,7 @@ The container health check, the load balancer health check and the pipeline's ch
 
 ## Directory lookup
 
-`GET /api/v1/directory/users?search={text}` finds internal users in the internal issuer's directory (Microsoft Graph for Entra ID) for pickers in the web interface. It is optional, and the only path to the directory; the web interface never calls the directory directly (Standard D-10).
+`GET /api/v1/directory/users?search={text}` finds internal users in the internal issuer's directory (Microsoft Graph for Entra ID) for pickers in the web interface. It is optional, and the only path to the directory; it is not yet in the platform package, so an application that needs it writes it (the standard's work plan item F03.4); the web interface never calls the directory directly (Standard D-10).
 
 - Available only when `DIRECTORY_ENABLED` is true, and to the roles listed for it in [21-api.md](21-api.md).
 - Requires at least three characters of search text and returns at most 25 people.
@@ -186,7 +195,7 @@ The container health check, the load balancer health check and the pipeline's ch
 
 `apps/api/Dockerfile` is a multi-stage build:
 
-1. A build stage, from a Python base image pinned by digest, installs dependencies from `uv.lock` with `uv sync --frozen --no-dev` into a virtual environment.
+1. A build stage, from a Python base image pinned by digest, installs `git`, which uv needs to fetch the platform package from its tag, then installs dependencies from `uv.lock` with `uv sync --frozen --no-dev` into a virtual environment.
 2. A runtime stage, from the same base image, copies only the virtual environment, the application code and the RDS certificate bundle. It runs as a non-root user and starts `uvicorn` on `0.0.0.0:8000`.
 
 The image has a container health check calling `/api/health`. The same image runs the API, the migration task (`alembic upgrade head`) and scheduled jobs (`python -m apps.api.jobs.{job}`).
@@ -195,13 +204,16 @@ The image has a container health check calling `/api/health`. The same image run
 
 | Purpose | Package |
 |---|---|
+| The platform | `ai-app-platform`, from its release tag ([10-architecture.md](10-architecture.md#platform-packages)) |
 | Web framework and server | `fastapi`, `uvicorn[standard]` |
 | Database | `sqlalchemy`, `psycopg[binary]`, `alembic` |
 | Settings and schemas | `pydantic`, `pydantic-settings` |
-| Sign-in and token validation | `authlib` (OpenID Connect client: the authorisation code flow with PKCE and `private_key_jwt` client authentication), `pyjwt[crypto]` |
+| Token validation | `pyjwt[crypto]`, which the platform uses for sign-in, client authentication and bearer tokens |
 | AWS | `boto3` |
 | HTTP client (discovery, directory lookup) | `httpx` |
 | Development | `pytest`, `pytest-cov`, `ruff`, `pyright[nodejs]` |
+
+The platform package depends on the same libraries; the application lists those it imports itself.
 
 Versions are pinned in `uv.lock`, which is committed. The Python version is set in `pyproject.toml` (`requires-python`) and matches the Dockerfile base image.
 
@@ -212,8 +224,10 @@ Versions are pinned in `uv.lock`, which is committed. The Python version is set 
 - `db_engine`: connected to PostgreSQL, the same database engine as production
 - `db_session`: each test in a transaction with a savepoint, rolled back afterwards
 - `client`: a `TestClient` with the database session dependency overridden
-- `issue_token(provider, roles, delegated)`: signs bearer tokens with a test key pair, which the API validates through its normal code path
-- `signed_in(provider, roles)`: creates a sign-in session and returns the cookie and cross-site request forgery token
+- `issue_token(roles, delegated)`: signs bearer tokens with the platform's `testing.TEST_ISSUER`, whose key pair the API validates through its normal code path, once the tests set it as the internal provider
+- `signed_in(roles)`: creates a sign-in session with the platform's `auth.sessions.create_session` and returns the cookie and cross-site request forgery token
+
+The platform's own behaviour is tested in `ai-app-platform`; the application's tests cover its configuration of the platform and its own code.
 
 ## Acceptance criteria
 

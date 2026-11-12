@@ -9,7 +9,7 @@ What is audited, what each audit record holds and how corrections are recorded.
 - **Every change to rule configuration and reference data**, with the before and after state.
 - **Every action by another system or a scheduled job**, with its actor type.
 
-Each audit record is written by the service in the same transaction as the change it records, so a change and its audit record succeed or fail together.
+Each audit record is written by the service in the same transaction as the change it records, so a change and its audit record succeed or fail together. The API platform package provides the `audit_records` model and `AuditService`, whose `record` method the services call ([10-architecture.md](10-architecture.md#platform-packages)); the application lists the entity types and actions it audits.
 
 ## Audit record fields
 
@@ -20,7 +20,7 @@ Each audit record is written by the service in the same transaction as the chang
 | `entity_id` | ID of the record changed | Yes |
 | `action` | Action performed | Yes |
 | `actor_id` | Subject of the actor (the person's subject claim from their issuer, the system's client ID, or the job name) | Yes |
-| `actor_type` | `internal`, `external`, `system` or `job` | Yes |
+| `actor_type` | `internal`, `external`, `system` or `job`. Version 0.1 of the package records `internal`, `system` and `job` (`external` comes with the standard's work plan item F03.5) | Yes |
 | `occurred_at` | When the change was committed (UTC) | Yes |
 | `correlation_id` | Correlation ID of the request or job run | Yes |
 | `reason_code` | Reason code | For corrections |

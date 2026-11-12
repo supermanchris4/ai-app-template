@@ -14,6 +14,7 @@ Claude is the implementation agent, not the designer. All behaviour comes from t
 - If a specification is missing, ambiguous or contradicts the request, ask. Do not infer.
 - Every change to behaviour updates the specification that describes it, in the same change.
 - Specifications marked **APPLICATION STUB** must be filled in before any domain code is generated.
+- Do not write or copy code the platform packages provide ([specs/10-architecture.md](specs/10-architecture.md#platform-packages)). Install them; a fix belongs in `ai-app-platform`.
 
 ## Stop rules
 
@@ -28,11 +29,11 @@ Stop and report to the user, without continuing the task, when any of these happ
 ## Repository structure
 
 ```
-apps/api/              Python FastAPI API: all business logic, validation and access control
-apps/web/              Vite React single-page app: no business rules
+apps/api/              Python FastAPI API: all business logic, validation and access control, on the ai_app_platform package
+apps/web/              Vite React single-page app: no business rules, on the @supermanchris4/ai-app-platform-web package
 infra/bootstrap/       One-off AWS account bootstrap (OIDC provider, deploy roles, state bucket, optional network)
 infra/aws/             Terraform for the deployed application, one file per concern
-infra/local/           Docker Compose for local PostgreSQL and API
+infra/local/           Docker Compose for local PostgreSQL, the platform's mock identity provider and the API
 specs/                 Specifications: the source of truth for what is built
 adrs/                  This application's own decision records, including deviations from the standard
 docs/                  The delivery plan and runbooks for this application

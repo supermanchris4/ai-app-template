@@ -11,7 +11,7 @@ Local development needs no real secret. Sign-in uses the local mock identity pro
 | `infra/local/docker-compose.yml` | The local services |
 | `infra/local/.env.example` | Local settings, copied to `infra/local/.env` (which git ignores) |
 | `infra/local/postgres-init/` | SQL run when the database volume is first created |
-| `infra/local/mock-idp/` | The local mock identity provider |
+| `infra/local/mock-idp.json` | The application's roles and synthetic people, for the local mock identity provider |
 | `infra/local/README.md` | The commands below |
 
 ## Services
@@ -21,7 +21,7 @@ All services join one bridge network, `local_net`. The application prefix (`app`
 | Service | Purpose | Image or build | Host port | Starts after |
 |---|---|---|---|---|
 | `postgres` | Local database | PostgreSQL image at the version the RDS instance uses, pinned by digest | `5432` | |
-| `mock-idp` | Stands in for the internal and external issuers | Built from `infra/local/mock-idp/` | `9000` | |
+| `mock-idp` | Stands in for the internal and external issuers | The platform's released image, `ghcr.io/supermanchris4/ai-app-platform-mock-idp`, pinned by version and digest ([10-architecture.md](10-architecture.md#platform-packages)) | `9000` | |
 | `api` | The API, with source mounted and auto-reload | Built from `apps/api/Dockerfile` | `8000` | `postgres` and `mock-idp` healthy |
 | `migrate` | Applies migrations (`alembic upgrade head`), then exits. In the `tools` profile, so it runs only on request. | Same as `api` | | `postgres` healthy |
 
@@ -35,10 +35,11 @@ The web interface is not containerised locally. It runs on the Vite development 
 
 ## Local mock identity provider
 
-A small OpenID Connect provider in `infra/local/mock-idp/` that stands in for both the internal issuer and the external issuer. The API signs people in and validates tokens against it through the same code as in deployed environments, and the web interface has no local-only sign-in path.
+A small OpenID Connect provider, released by the platform as an image ([10-architecture.md](10-architecture.md#platform-packages)), that stands in for both the internal issuer and the external issuer. Its README in `ai-app-platform` (`packages/mock-idp`) gives its settings. The API signs people in and validates tokens against it through the same code as in deployed environments, and the web interface has no local-only sign-in path.
 
 - It serves two issuers: `http://mock-idp:9000/internal` for internal users and `http://mock-idp:9000/external` for external users. An application with no external users uses only the first. Each has its own discovery document, signing keys, authorisation endpoint and token endpoint.
 - It generates new RSA key pairs each time it starts. No key is stored on disk or in the repository.
+- **The application's roles and people.** The image holds none of an application's roles or people. It reads them at start-up from the JSON file named by `MOCK_IDP_CONFIG`, which Compose mounts read-only from `infra/local/mock-idp.json`, and refuses to start without it or if it does not make sense. The file holds `human_roles` (offered on the sign-in page), `system_roles` (for test tokens only) and `people`, each a synthetic person with an `oid`, a `name` and default `roles` drawn from `human_roles`. People are synthetic, never real.
 - **Signing in.** Its authorisation page, reached by the browser at `http://localhost:9000`, shows a list of the application's roles for that issuer and a choice of synthetic people. Choosing one completes the authorisation code flow back to the API. The discovery documents give the browser-facing address for the authorisation page and the container address for the token endpoint.
 - **Bearer tokens.** `POST /{issuer}/test-token` returns a signed access token for the subject, roles and token type in the request body, for calling the API directly as a system or as a consumer acting for an external user would. A delegated token includes the `scp` claim with `access_as_user`; an app-only token has no `scp`.
 - It accepts any client authentication, so no certificate is needed locally.
