@@ -13,6 +13,8 @@ The API trusts one or two OpenID Connect issuers, each configured by its discove
 | External users through a consumer | External | The consumer calls the API with the user's own access token |
 | Other systems, including consumers for calls not about one user | Internal or external, as the application owner sets up | Bearer access tokens from the client credentials flow |
 
+The API platform package implements this specification for internal users and other systems ([10-architecture.md](10-architecture.md#platform-packages)). External users are not yet in the package: an application that has them writes their sign-in, sessions and tokens until the standard's work plan item F03.5 provides them.
+
 Developers' machines use the local mock identity provider in place of both ([11-local-development.md](11-local-development.md#local-mock-identity-provider)). The API signs in and validates through the same code.
 
 ## Web sign-in: the API as backend-for-frontend
@@ -77,7 +79,7 @@ The application team defines the application's roles in the table below, followi
 | `account.view` | External | Read their own example records |
 | `system.example.read` | System | Read the example records from another system |
 
-The role values are declared once in `apps/api/auth/roles.py` and must match the registrations exactly.
+The role values are declared once in the application's `domain/enums.py` and must match the registrations exactly. Routes check them with the platform's `require_role`.
 
 ## Authorisation
 

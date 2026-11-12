@@ -2,6 +2,8 @@
 
 The AWS infrastructure for one environment of the application, defined in Terraform in `infra/aws/`, and the one-off account bootstrap in `infra/bootstrap/`. The pipelines that apply it are in [13-delivery-pipeline.md](13-delivery-pipeline.md).
 
+The platform packages do not yet include this Terraform, so the application writes it from this specification until the standard's work plan item F03.3 releases it as reusable modules in `ai-app-platform` ([10-architecture.md](10-architecture.md#platform-packages)).
+
 ## Principles
 
 - The application deploys into a network supplied as inputs. It creates no VPC, subnets, NAT gateways or internet gateways (Standard D-05). For an account with no network, the account bootstrap can create a minimal one ([Account bootstrap](#account-bootstrap)).

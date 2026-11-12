@@ -1,0 +1,78 @@
+# Dependabot's settings for an application. Copy this file over .github/dependabot.yml once apps/
+# and infra/ hold code (TEMPLATE_USAGE.md): Dependabot fails on a folder with nothing to update.
+#
+# Dependabot proposes version updates as pull requests, which run the full CI checks before merge.
+# Each waits 7 days after a release before proposing it, so a malicious or broken release can be
+# withdrawn first; security updates are not delayed. Major versions that change how code is built
+# are adopted on purpose, each in its own change.
+version: 2
+updates:
+  - package-ecosystem: uv
+    directory: /apps/api
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      api-dependencies:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /apps/web
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    ignore:
+      # Node's types follow the Node version in .nvmrc (specs/10-architecture.md#versions).
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      - dependency-name: tailwindcss
+        update-types: ["version-update:semver-major"]
+    groups:
+      web-dependencies:
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directory: /apps/api
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+
+  # The images the local stack pulls: PostgreSQL and the platform's mock identity provider.
+  - package-ecosystem: docker-compose
+    directory: /infra/local
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    ignore:
+      # A PostgreSQL major cannot open existing local data volumes and must match the RDS version.
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: terraform
+    directories:
+      - /infra/aws
+      - /infra/bootstrap
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: pre-commit
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7

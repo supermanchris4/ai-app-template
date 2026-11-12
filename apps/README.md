@@ -1,4 +1,4 @@
 # Applications
 
-- `api/`: the API, in Python with FastAPI. It holds all business logic, validates every request and enforces access.
-- `web/`: the web interface, a Vite React single-page app served as static files. It holds no business rules.
+- `api/`: the API, in Python with FastAPI. It holds all business logic, validates every request and enforces access. Its platform code (settings, logging, database access, middleware, sign-in and access, audit recording) is the API platform package, `ai_app_platform`; the application writes its settings, roles, domain code, routes, migrations and tests ([specs/20-api-scaffold.md](../specs/20-api-scaffold.md#directory-structure)).
+- `web/`: the web interface, a Vite React single-page app served as static files. It holds no business rules. Its shared shell (the API client, sign-in, the session and route guard, the error notice, the environment banner, dates and navigation links) is the web platform package, `@supermanchris4/ai-app-platform-web`; the application writes `src/lib/api.ts`, its pages and its component kit ([specs/40-ui.md](../specs/40-ui.md#template-conventions)).
