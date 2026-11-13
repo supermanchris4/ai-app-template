@@ -112,7 +112,7 @@ The rules Claude must follow when generating code in this repository. They overr
 | Sign-in | Through the API's `/api/auth/` endpoints only. No sign-in library, and no token handling or storage, in the browser. |
 | Components | Extend the kit in `components/ui/`. Do not add a component library that duplicates it. |
 | Role checks | Decide only what is shown. The API enforces access. |
-| Tests | Vitest for components, Playwright for end-to-end journeys, automated accessibility checks on every page. Each test's title starts with the requirements it verifies, such as `FR-INSP-01: records an inspection` |
+| Tests | Vitest for components, Playwright for end-to-end journeys, automated accessibility checks on every page. Each test's title starts with the requirements it verifies, such as `FR-INSP-01: records an inspection`, or with `No requirement: ` for a test that verifies none |
 
 ## Terraform
 
