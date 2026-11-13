@@ -19,7 +19,7 @@ The gates above need features that, on a private repository, depend on the GitHu
 | Feature on a private repository | GitHub Free | GitHub Pro | GitHub Team | GitHub Enterprise |
 |---|---|---|---|---|
 | `main` protected, by a ruleset or branch protection | No | Yes | Yes | Yes |
-| GitHub Environments, with deployment restricted to `main` and environment variables | No | Yes | Yes | Yes |
+| GitHub Environments, with deployment restricted to `main` | No | Yes | Yes | Yes |
 | Required reviewers on an environment | No | No | No | Yes |
 | Secret scanning and push protection | No | No | If GitHub Secret Protection is bought | If GitHub Secret Protection is bought |
 
@@ -28,7 +28,7 @@ Where a feature is missing, the application uses the fallback, and records its p
 | Missing | Fallback |
 |---|---|
 | Protection of `main` | The ruleset is still kept in `.github/rulesets/`, so it can be applied unchanged when the plan allows. Until then, a pull request whose checks fail is not merged, by agreement. |
-| GitHub Environments | The deploy roles trust the `main` branch instead of an environment ([Authentication to AWS](#authentication-to-aws)). Deploying to `test` or `prod` is a run started by hand from `main`, by someone agreed to approve releases. Each environment's variables are repository variables named for it ([Variables and secrets](#variables-and-secrets)). |
+| GitHub Environments | The deploy roles trust the `main` branch instead of an environment ([Authentication to AWS](#authentication-to-aws)). Deploying to `test` or `prod` is a run started by hand from `main`, by someone agreed to approve releases. The platform workflows' `github-environment` input is left empty. |
 | Required reviewers | Deployment to `test` and `prod` is restricted to `main`, and started by hand only by someone agreed to approve releases; the run records who started it. |
 | Secret scanning and push protection | The pull request checks' secret scan and the developers' pre-commit secret scan, which are run on every plan anyway. |
 
@@ -92,12 +92,12 @@ To deploy to an environment:
 ## Authentication to AWS
 
 - Workflows authenticate through OIDC. No AWS access keys are stored in GitHub.
-- Deploy roles trust only the repository's immutable ID and the named GitHub Environment, so a renamed or transferred repository cannot assume them. Without GitHub Environments, they trust the repository's immutable ID and its `main` branch.
+- Deploy roles trust only the repository's immutable ID and the named GitHub Environment, so a renamed or transferred repository cannot assume them; the calling workflow names the environment in the platform workflow's `github-environment` input. Without GitHub Environments, they trust the repository's immutable ID and its `main` branch, and the input is left empty.
 - Plans on pull requests use a read-only role.
 
 ## Variables and secrets
 
-- Role ARNs, the region, network IDs, the state bucket and other identifiers are **GitHub variables**, not secrets, scoped to the GitHub Environment where they differ by environment. Without GitHub Environments, each environment's are repository variables prefixed with its name, such as `DEV_DEPLOY_ROLE_ARN`, `TEST_DEPLOY_ROLE_ARN` and `PROD_DEPLOY_ROLE_ARN`.
+- Role ARNs, the region, network IDs, the state bucket and other identifiers are **GitHub variables**, not secrets. They are repository variables, prefixed with the environment's name where they differ by environment, such as `DEV_DEPLOY_ROLE_ARN`, `TEST_DEPLOY_ROLE_ARN` and `PROD_DEPLOY_ROLE_ARN`: a calling workflow passes them to the platform workflows as inputs, and a job that calls a reusable workflow cannot read an environment's variables.
 - Any sensitive value a workflow needs is read from Secrets Manager at run time through OIDC. Where a GitHub secret is unavoidable, it is scoped to an environment behind required reviewers; without them, no GitHub secret is used.
 - Push protection and secret scanning are on for the repository where the GitHub plan provides them, the pull request checks run a secret scan, and developers run the pre-commit secret scan (`.pre-commit-config.yaml`).
 
