@@ -36,8 +36,9 @@ Following [specs/13-delivery-pipeline.md](../specs/13-delivery-pipeline.md):
 
 | Step | Value | Done |
 |---|---|---|
-| Create the GitHub Environments `dev`, `test` and `prod` | | |
-| Add a required reviewer and restrict deployment to `main` on `test` and `prod` | Reviewer: {user} | |
-| Add the GitHub variables for each environment: role ARNs, region, network IDs, state bucket, certificate ARNs | | |
-| Add the branch ruleset on `main`: pull request required, required checks from `ci.yml`, no force pushes | | |
+| Check which GitHub features the repository's plan provides, and record the fallbacks in an ADR ([specs/13-delivery-pipeline.md](../specs/13-delivery-pipeline.md#private-repositories-and-the-github-plan)) | Plan: | |
+| Where the plan provides them: create the GitHub Environments `dev`, `test` and `prod`, and restrict deployment to `main` on `test` and `prod` | | |
+| Where the plan provides them: add a required reviewer on `test` and `prod` | Reviewer: {user} | |
+| Add the GitHub variables for each environment as repository variables prefixed with its name, such as `TEST_DEPLOY_ROLE_ARN`: role ARNs, region, network IDs, state bucket, certificate ARNs | | |
+| Apply the branch ruleset on `main` from `.github/rulesets/`: pull request required, required checks from `ci.yml`, no force pushes. Where the plan does not enforce it, keep it for when it does | | |
 | Turn on secret scanning and push protection, where the plan provides them | | |
