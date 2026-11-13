@@ -1,4 +1,4 @@
-# Replace @supermanchris4 with the GitHub users or teams who review each path.
+# Replace the owners below with the GitHub users or teams who review each path.
 # A pull request needs approval from the owners of every path it changes.
 *                   @supermanchris4
 /specs/             @supermanchris4

@@ -22,13 +22,13 @@ Created from ai-app-template at {commit SHA} on {date}.
 |---|---|---|
 | `app` prefix | [specs/11-local-development.md](specs/11-local-development.md), `infra/local/` | The application's short name, used for container names, the database name and the database users |
 | Template title and description | `README.md`, `CLAUDE.md` | The application's name and purpose |
-| `@supermanchris4` | `.github/CODEOWNERS` | The GitHub users or teams who review each path, if not the template owner |
+| The template owner | `.github/CODEOWNERS` | The GitHub users or teams who review each path |
 | Example roles | [specs/50-auth.md](specs/50-auth.md) | The application's roles |
 | Roles and synthetic people | `infra/local/mock-idp.json` | The application's roles, and made-up people to sign in as locally |
 
 ## 4. Take the platform packages
 
-The platform code is installed from the packages released by [`ai-app-platform`](https://github.com/supermanchris4/ai-app-platform), never generated or copied ([specs/10-architecture.md](specs/10-architecture.md#platform-packages), which names the versions). None of them needs a GitHub or AWS secret.
+The platform code is installed from the packages released by `ai-app-platform`, never generated or copied ([specs/10-architecture.md](specs/10-architecture.md#platform-packages), which names the versions). None of them needs a GitHub or AWS secret.
 
 **API platform.** In `apps/api/pyproject.toml`, depend on `ai-app-platform` and install it from its release tag. `uv.lock` records the tag's commit. uv fetches git sources with `git`, so the image's build stage installs it ([specs/20-api-scaffold.md](specs/20-api-scaffold.md#container-image)). Do not install the wheel attached to the release instead: Dependabot cannot check its download link, and then updates none of the API's dependencies.
 
