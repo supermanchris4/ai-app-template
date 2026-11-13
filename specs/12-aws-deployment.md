@@ -153,7 +153,7 @@ Each scheduled job is an EventBridge Scheduler schedule that runs the API task d
 
 - the GitHub OIDC provider, unless the account already has one (`github-oidc-provider`)
 - the permissions boundary for every role the pipelines create or use (`permissions-boundary`)
-- the Terraform deploy role, trusted only by the repository's immutable ID and its GitHub Environments, with the permissions boundary (`github-actions-role`)
+- the Terraform deploy role, trusted only by the repository's immutable ID and either its GitHub Environments or, on a GitHub plan without them, its `main` branch (an input; [13-delivery-pipeline.md](13-delivery-pipeline.md#private-repositories-and-the-github-plan)), with the permissions boundary (`github-actions-role`)
 - a read-only role for Terraform plans on pull requests (`github-actions-role`)
 - the Terraform state bucket, versioned and encrypted, with public access blocked (`terraform-state-bucket`)
 - the CloudFormation role through which the `rotation-function` module installs AWS's rotation function. It is the application's own resource, and the one role without the permissions boundary, because the function's role, created from AWS's template, cannot carry it; only CloudFormation can assume it, and it may create only the rotation function and its role (the module's README)

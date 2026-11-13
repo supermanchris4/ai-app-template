@@ -12,6 +12,26 @@ The work is done by the platform's reusable workflows, released from `ai-app-pla
 | `test` | The image already running in `dev`, on request | Required reviewers; deployment from `main` only |
 | `prod` | The image already running in `test`, on request | Required reviewers; deployment from `main` only |
 
+### Private repositories and the GitHub plan
+
+The gates above need features that, on a private repository, depend on the GitHub plan (Standard assumption A-02, checked 2026-11-13). A public repository has them all on every plan.
+
+| Feature on a private repository | GitHub Free | GitHub Pro | GitHub Team | GitHub Enterprise |
+|---|---|---|---|---|
+| `main` protected, by a ruleset or branch protection | No | Yes | Yes | Yes |
+| GitHub Environments, with deployment restricted to `main` and environment variables | No | Yes | Yes | Yes |
+| Required reviewers on an environment | No | No | No | Yes |
+| Secret scanning and push protection | No | No | If GitHub Secret Protection is bought | If GitHub Secret Protection is bought |
+
+Where a feature is missing, the application uses the fallback, and records its plan and the fallbacks it uses in an ADR:
+
+| Missing | Fallback |
+|---|---|
+| Protection of `main` | The ruleset is still kept in `.github/rulesets/`, so it can be applied unchanged when the plan allows. Until then, a pull request whose checks fail is not merged, by agreement. |
+| GitHub Environments | The deploy roles trust the `main` branch instead of an environment ([Authentication to AWS](#authentication-to-aws)). Deploying to `test` or `prod` is a run started by hand from `main`, by someone agreed to approve releases. Each environment's variables are repository variables named for it ([Variables and secrets](#variables-and-secrets)). |
+| Required reviewers | Deployment to `test` and `prod` is restricted to `main`, and started by hand only by someone agreed to approve releases; the run records who started it. |
+| Secret scanning and push protection | The pull request checks' secret scan and the developers' pre-commit secret scan, which are run on every plan anyway. |
+
 Each merge to `main` produces one build: one API image, identified by its digest, and one web build. The same build is deployed to `dev`, then `test`, then `prod`, with only the configuration differing ([10-architecture.md](10-architecture.md#environments)). Nothing is rebuilt for `test` or `prod`.
 
 ## Workflows
@@ -72,17 +92,18 @@ To deploy to an environment:
 ## Authentication to AWS
 
 - Workflows authenticate through OIDC. No AWS access keys are stored in GitHub.
-- Deploy roles trust only the repository's immutable ID and the named GitHub Environment, so a renamed or transferred repository cannot assume them.
+- Deploy roles trust only the repository's immutable ID and the named GitHub Environment, so a renamed or transferred repository cannot assume them. Without GitHub Environments, they trust the repository's immutable ID and its `main` branch.
 - Plans on pull requests use a read-only role.
 
 ## Variables and secrets
 
-- Role ARNs, the region, network IDs, the state bucket and other identifiers are **GitHub variables**, not secrets, scoped to the GitHub Environment where they differ by environment.
-- Any sensitive value a workflow needs is read from Secrets Manager at run time through OIDC. Where a GitHub secret is unavoidable, it is scoped to an environment behind required reviewers.
+- Role ARNs, the region, network IDs, the state bucket and other identifiers are **GitHub variables**, not secrets, scoped to the GitHub Environment where they differ by environment. Without GitHub Environments, each environment's are repository variables prefixed with its name, such as `DEV_DEPLOY_ROLE_ARN`, `TEST_DEPLOY_ROLE_ARN` and `PROD_DEPLOY_ROLE_ARN`.
+- Any sensitive value a workflow needs is read from Secrets Manager at run time through OIDC. Where a GitHub secret is unavoidable, it is scoped to an environment behind required reviewers; without them, no GitHub secret is used.
 - Push protection and secret scanning are on for the repository where the GitHub plan provides them, the pull request checks run a secret scan, and developers run the pre-commit secret scan (`.pre-commit-config.yaml`).
 
 ## Workflow hardening
 
+- The ruleset protecting `main` is kept in `.github/rulesets/main.json`, so a change to it is reviewed like any other, and an administrator applies it once merged.
 - Every third-party action and reusable workflow is pinned to a full commit SHA, with the version in a comment. Dependabot proposes updates to actions; the platform workflows are upgraded on purpose ([Platform workflows](#platform-workflows)).
 - The repository requires actions to be pinned to a full commit SHA (Settings → Actions → General), and its default workflow token is read-only.
 - A public repository requires approval before workflows run on pull requests from all external contributors.
