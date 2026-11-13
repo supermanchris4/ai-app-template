@@ -38,7 +38,7 @@ Each merge to `main` produces one build: one API image, identified by its digest
 
 | Workflow | Trigger | What it does | Platform workflows it calls |
 |---|---|---|---|
-| `ci.yml` | Every pull request, and pushes to `main` | The checks below. Required to pass before merge. | `python-checks`, `web-checks`, `contract-check`, `terraform-checks`, `image-checks`, `security-checks`, `workflow-checks` |
+| `ci.yml` | Every pull request, and pushes to `main` | The checks below. Required to pass before merge. | `python-checks`, `web-checks`, `contract-check`, `terraform-checks`, `image-checks`, `security-checks`, `workflow-checks`, `traceability-check` |
 | `infra-plan.yml` | Pull requests that change `infra/` | `terraform plan` for each environment with the read-only role, posted to the pull request | `terraform-plan`, once per environment |
 | `infra-apply.yml` | Merge to `main` changing `infra/`, or on request | `terraform apply` for `dev`, then `test` and `prod` through their approved environments | `terraform-apply`, once per environment |
 | `deploy.yml` | Merge to `main`, or on request with an environment | On merge, builds once and deploys to `dev`. On request, deploys an existing build to the chosen environment | `build-application`, then `deploy-application` per environment |
@@ -72,7 +72,7 @@ The commit is taken only from the release's notes or from the tag in `ai-app-pla
 | Contract | The OpenAPI document generated from the API matches the committed one used to generate the web client |
 | Infrastructure | `terraform fmt -check`, `terraform validate`, `terraform test`, infrastructure security scanning |
 | Images | Build the API image; scan it for vulnerabilities |
-| Traceability | Every requirement ID that a specification, a test or a register cites exists in the requirements, every test names the requirements it verifies, and the generated requirements trace report is current |
+| Traceability | Every requirement ID that a specification, a test or a register cites exists in the requirements, every test names the requirements it verifies, and the generated requirements trace report is current. The platform's `traceability-check` workflow runs it (API package 0.2.0 or later); `python -m ai_app_platform.traceability --write` regenerates the report |
 | Security | Code scanning, dependency review and secret scanning (GitHub's own features where the plan provides them, otherwise open-source equivalents such as gitleaks) |
 | Workflows | actionlint, with shellcheck, over `.github/workflows` |
 
