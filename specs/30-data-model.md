@@ -17,7 +17,7 @@ Per table, record the classification and whether the table holds personal inform
 
 **Rules, for every application:**
 
-- **Only synthetic data enters the repository.** This includes tests, fixtures, seed scripts, migrations, examples, documentation and screenshots. Synthetic data is invented, not derived from, anonymised from or sampled from real records.
+- **Only synthetic data enters the repository.** This includes tests, fixtures, seed scripts, schema migrations, examples, documentation and screenshots. Synthetic data is invented, not derived from, anonymised from or sampled from real records.
 - Real data is held only in deployed databases, and copied between environments only as the data owner approves.
 - Personal information is collected only where a requirement needs it.
 - Personal information is never written to logs ([99-generation-rules.md](99-generation-rules.md#secrets-and-data)). It may be held in audit records, which sit in the same database with the same controls ([31-audit.md](31-audit.md#personal-information-in-audit-records)).

@@ -204,6 +204,8 @@ The container health check, the load balancer health check and the pipeline's ch
 
 The image has a container health check calling `/api/health`. The same image runs the API, the migration task (`alembic upgrade head`) and scheduled jobs (`python -m apps.api.jobs.{job}`).
 
+**Network certificate.** Some networks inspect encrypted traffic and re-sign it with their own root certificate. Each build step that downloads packages mounts an optional build secret, `corporate_ca`, with `RUN --mount=type=secret,id=corporate_ca,required=false`. When the secret is present, the step sets `SSL_CERT_FILE` to it for that step only. The secret is a full certificate bundle, because `SSL_CERT_FILE` replaces uv's trusted certificates rather than adding to them. On a developer's machine, Compose supplies it ([11-local-development.md](11-local-development.md#image-builds)). Pipeline builds supply no secret. A secret mount is not stored in any image layer, so the image is the same wherever it is built.
+
 ## Dependencies
 
 | Purpose | Package |
@@ -236,6 +238,7 @@ The platform's own behaviour is tested in `ai-app-platform`; the application's t
 ## Acceptance criteria
 
 - The API starts in Docker Compose and `GET /api/health` returns 200 when the database is available and 503 when it is not.
+- The API image builds in the pipeline without the `corporate_ca` secret, and on a developer's machine with it. No file in the built image comes from the secret.
 - The API refuses to start in a deployed environment with an issuer that is not on HTTPS at an allowed host, without a client certificate, without TLS verification or with local database credentials.
 - Signing in through `/api/auth/login` sets a `__Host-session` cookie that is `HttpOnly`, `Secure` and `SameSite=Lax`, and no token reaches the browser.
 - Every endpoint except `/api/health` and `/api/auth/` returns 401 without a valid token or session, and 403 without a permitted role.
