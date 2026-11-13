@@ -34,7 +34,7 @@ A Feature moves up a horizon when the release before it is reviewed.
 
 1. **Context.** What the application is, and where its requirements come from.
 2. **Outcome.** The Outcome the application serves, with the fields in the hierarchy table.
-3. **Epics.** Each with its type and a one-line pitch, linked to its folder.
+3. **Epics.** Each with its type, the functional areas it builds and a one-line pitch, linked to its folder.
 4. **Releases and implementation sequence.** Which Features each release groups, and a Mermaid diagram of the order, without dates or durations.
 5. **Standard tasks.** The table below.
 6. **Dependencies.** What the application needs from other teams, and which Feature needs it.

@@ -30,6 +30,8 @@ The rules in [23-application-rules.md](23-application-rules.md) also always appl
 ```
 ### {Entity}
 
+**Requirements:** {requirement IDs}
+
 **States:** {list}
 
 **Transitions:**

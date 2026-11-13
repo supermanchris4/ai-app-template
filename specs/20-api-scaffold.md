@@ -104,6 +104,8 @@ There is no setting that turns authentication off, and no cross-origin (CORS) se
 
 ## Authentication and authorisation
 
+**Requirements:** [NFR-SEC-01](02-requirements.md#nfr-sec-01-authenticated-and-authorised-access)
+
 The model is in [50-auth.md](50-auth.md). The API platform package implements it as follows; the modules named are within `ai_app_platform`. Version 0.1 implements the internal issuer only: the external issuer's settings and discovery are in place, but its sign-in, sessions and tokens are not, so an application with external users writes them until the standard's work plan item F03.5 provides them.
 
 **Providers.** `auth.providers` reads each provider's discovery document at start-up and caches it, including the issuer, the endpoints and the signing keys. Keys are refreshed when an unknown key ID appears. Tokens are validated against the issuer the discovery document gives, and the API refuses to start if the discovery document cannot be read.
@@ -170,6 +172,8 @@ The platform's `middleware` module provides both, and the application adds them 
 There is no rate limiting in the API. Rate-based rules are applied by AWS WAF at CloudFront ([12-aws-deployment.md](12-aws-deployment.md#edge)).
 
 ## Logging
+
+**Requirements:** [NFR-OBS-01](02-requirements.md#nfr-obs-01-logging-and-alarms)
 
 The platform's `logging_config` configures one JSON formatter for all loggers, writing one JSON object per line to standard output. Every line includes the timestamp (UTC, ISO 8601), level, logger, message, correlation ID and request ID, plus every field passed through `extra`. Personal information (including names, email addresses and subject identifiers), tokens, cookies, passwords and connection strings are never logged, and the formatter drops any `extra` field named in its deny list (`authorization`, `cookie`, `token`, `password`, `email`, `name`, `oid`, `subject`). Path templates are logged rather than full paths, so identifiers in URLs are not.
 

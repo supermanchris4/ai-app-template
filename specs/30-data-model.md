@@ -28,7 +28,7 @@ Per table, record the classification and whether the table holds personal inform
 | Concern | Convention |
 |---|---|
 | Primary keys | `UUID`, default `gen_random_uuid()` |
-| Timestamps | `TIMESTAMPTZ`, stored in UTC. Every table has `created_at` and `updated_at`, default `now()`. |
+| Timestamps | `TIMESTAMPTZ`, stored in UTC. Every table has `created_at` and `updated_at`, both set by the server when the row is created, default `now()`. `updated_at` is set again on every change, so a row never changed has `updated_at` equal to `created_at` ([NFR-DAT-01](02-requirements.md#nfr-dat-01-change-stamps)). |
 | Calendar dates | `DATE` for a date with no time of day, such as a due date. Never stored as a timestamp at midnight. |
 | Soft delete | `deleted_at TIMESTAMPTZ NULL`. Audited records are not hard-deleted. |
 | Documents | `JSONB` only |
@@ -75,9 +75,12 @@ App roles set which operations an external user may call. They do not set which 
 
 > **APPLICATION STUB.** Document every table before it is created.
 
+Document related tables together as a group, and break a group that is still too large to read into sub-groups. Each group or sub-group opens with its own Mermaid entity relationship diagram of its tables, laid out with ELK, followed by a table of its relationships to tables in other groups. There is never one diagram of the whole model, and a diagram shows only documented tables. Entity diagrams belong here rather than in the glossary, where each entry states its relationships in words.
+
 ```
 ### {table_name}
 
+**Requirements:** {requirement IDs}
 **Purpose:** {one line}
 **Classification:** {classification}; personal information: {yes or no}
 

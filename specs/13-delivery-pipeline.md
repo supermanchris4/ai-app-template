@@ -63,6 +63,8 @@ The commit is taken only from the release's notes or from the tag in `ai-app-pla
 
 ## Pull request checks
 
+**Requirements:** [NFR-ACC-01](02-requirements.md#nfr-acc-01-accessibility)
+
 | Area | Checks |
 |---|---|
 | API | Ruff lint and format check, Pyright in strict mode, unit tests, integration tests against a PostgreSQL service container, coverage thresholds |
@@ -70,6 +72,7 @@ The commit is taken only from the release's notes or from the tag in `ai-app-pla
 | Contract | The OpenAPI document generated from the API matches the committed one used to generate the web client |
 | Infrastructure | `terraform fmt -check`, `terraform validate`, `terraform test`, infrastructure security scanning |
 | Images | Build the API image; scan it for vulnerabilities |
+| Traceability | Every requirement ID that a specification, a test or a register cites exists in the requirements, every test names the requirements it verifies, and the generated requirements trace report is current |
 | Security | Code scanning, dependency review and secret scanning (GitHub's own features where the plan provides them, otherwise open-source equivalents such as gitleaks) |
 | Workflows | actionlint, with shellcheck, over `.github/workflows` |
 

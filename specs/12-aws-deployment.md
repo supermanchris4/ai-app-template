@@ -82,6 +82,8 @@ Every variable has a description, a type and a validation rule. Network inputs h
 
 ## Edge
 
+**Requirements:** [NFR-SEC-03](02-requirements.md#nfr-sec-03-encryption-in-transit)
+
 One CloudFront distribution is the only entry point (Standard ADR-0006).
 
 - **Origins.** `/api/*` goes to the internal load balancer through a CloudFront VPC origin over HTTPS. Everything else goes to the private web bucket through Origin Access Control.
@@ -103,6 +105,8 @@ Consumers call the API through the same distribution and AWS WAF, with their own
 
 ## Compute
 
+**Requirements:** [NFR-AVL-01](02-requirements.md#nfr-avl-01-service-availability)
+
 - ECS cluster with Container Insights enabled.
 - The API service runs `api_desired_count` tasks on Fargate in `app_subnet_ids` with no public IP address. ECS spreads the tasks across Availability Zones.
 - Separate roles: the **execution role** pulls the image and writes logs; the **task role** holds only what the application needs at run time (reading its database credentials secret).
@@ -114,6 +118,8 @@ Consumers call the API through the same distribution and AWS WAF, with their own
 
 ## Database
 
+**Requirements:** [NFR-SEC-03](02-requirements.md#nfr-sec-03-encryption-in-transit), [NFR-SEC-04](02-requirements.md#nfr-sec-04-encryption-at-rest), [NFR-AVL-04](02-requirements.md#nfr-avl-04-backups-and-restore)
+
 - RDS for PostgreSQL in `app_subnet_ids`, Multi-AZ where `db_multi_az` is set, not publicly accessible, encrypted at rest, with TLS required (`rds.force_ssl`) at TLS 1.2 or later (`ssl_min_protocol_version`).
 - **RDS manages the master password** in Secrets Manager. The master user is used only to create the application's users.
 - **Two application users**, each with its own Secrets Manager secret:
@@ -123,6 +129,8 @@ Consumers call the API through the same distribution and AWS WAF, with their own
 - Backups are kept for `db_backup_retention_days`. Deletion protection and a final snapshot are on in `test` and `prod`. Recovery objectives are set per environment in [NFR-AVL-02 and NFR-AVL-03](02-requirements.md#non-functional-requirements), and the restore is tested.
 
 ## Secrets
+
+**Requirements:** [NFR-SEC-04](02-requirements.md#nfr-sec-04-encryption-at-rest)
 
 - All secrets are in Secrets Manager, encrypted with `kms_key_arn` where set.
 - The two database user secrets rotate every `secret_rotation_days` with the Secrets Manager single-user rotation function for PostgreSQL. The master password rotates through RDS.
@@ -136,6 +144,8 @@ Consumers call the API through the same distribution and AWS WAF, with their own
 Each scheduled job is an EventBridge Scheduler schedule that runs the API task definition with the job's command, in `app_subnet_ids`, with the same roles as the API. Schedules use `schedule_time_zone`. A job that fails sends its failure to the alarm topic (Standard ADR-0012).
 
 ## Monitoring
+
+**Requirements:** [NFR-OBS-01](02-requirements.md#nfr-obs-01-logging-and-alarms)
 
 - CloudWatch log groups for the API, the migration task and each scheduled job, kept for `log_retention_days`.
 - Alarms to `alarm_topic_arn`, from AWS's recommended set for ECS:

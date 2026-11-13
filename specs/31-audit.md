@@ -54,9 +54,13 @@ The starter set below applies to every application. The application team adds it
 
 ## Immutability
 
+**Requirements:** [NFR-AUD-01](02-requirements.md#nfr-aud-01-audit-trail)
+
 Audit records are append-only. The runtime database user can insert and read `audit_records` but cannot update or delete them ([30-data-model.md](30-data-model.md#conventions)).
 
 ## Queries
+
+**Requirements:** [NFR-AUD-01](02-requirements.md#nfr-aud-01-audit-trail)
 
 Audit records can be queried by entity type and ID, actor, action, date range and correlation ID. The application team defines the audit endpoints and the roles that may read them in [21-api.md](21-api.md).
 

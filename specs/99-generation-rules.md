@@ -100,6 +100,7 @@ The rules Claude must follow when generating code in this repository. They overr
 | Fixtures | pytest fixtures and factory functions producing synthetic data |
 | Coverage | At least 80% for services and 70% overall, enforced in CI |
 | Naming | `test_{module}.py`, with one test function per behaviour |
+| Requirements | Each test's docstring starts with the requirements it verifies, such as `"""Verifies FR-INSP-01. ..."""`. A test that verifies no requirement, such as one for a helper, says `Verifies no requirement.` |
 
 ## TypeScript (web interface)
 
@@ -111,7 +112,7 @@ The rules Claude must follow when generating code in this repository. They overr
 | Sign-in | Through the API's `/api/auth/` endpoints only. No sign-in library, and no token handling or storage, in the browser. |
 | Components | Extend the kit in `components/ui/`. Do not add a component library that duplicates it. |
 | Role checks | Decide only what is shown. The API enforces access. |
-| Tests | Vitest for components, Playwright for end-to-end journeys, automated accessibility checks on every page |
+| Tests | Vitest for components, Playwright for end-to-end journeys, automated accessibility checks on every page. Each test's title starts with the requirements it verifies, such as `FR-INSP-01: records an inspection` |
 
 ## Terraform
 
