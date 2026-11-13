@@ -42,7 +42,7 @@ Per table, record the classification and whether the table holds personal inform
 
 ## Template tables
 
-The template provides two tables, defined by the API platform package. The application's first migration creates them by calling `create_platform_tables(entity_types=[...])` from `ai_app_platform.migrations`, with the entity types it audits, and its models attach the same entity-type check to the platform's model. Their core columns are not changed.
+The template provides two tables, defined by the API platform package. The application's first migration creates them by calling `create_platform_tables(entity_types=[...])` from `ai_app_platform.migrations`, with the entity types it audits, then `add_platform_change_stamps()`, which gives `audit_records` its `updated_at` ([NFR-DAT-01](02-requirements.md#nfr-dat-01-change-stamps)); an audit record is never changed, so the two stay equal. Its models attach the same entity-type check to the platform's model. Their core columns are not changed.
 
 **`audit_records`** holds the audit trail, with the fields in [31-audit.md](31-audit.md#audit-record-fields). Applications extend the permitted `entity_type` and `action` values.
 
