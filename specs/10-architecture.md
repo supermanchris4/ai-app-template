@@ -63,11 +63,15 @@ These are the template's working versions (Standard configuration default C-02).
 
 The platform code every application needs is released as packages from `ai-app-platform`, a public repository. An application installs each at a released version and keeps no copy of its code. It writes only what the last column lists. A fix to platform code is made in `ai-app-platform` and reaches an application as a new version. Each package's README says how to use it, and its `CHANGELOG.md` says what each version changed.
 
+`{platform-owner}`, here and in the other specifications, stands for the GitHub account or organisation that owns the `ai-app-platform` repository the application takes its packages from. The packages' names, the image and the repository address all use it, since GitHub Packages and GitHub Container Registry name a package after its owner. The application's code uses the actual owner, in lower case; an unreplaced `{platform-owner}` is an error.
+
 | Package | Provides | Installed in | Version | The application writes |
 |---|---|---|---|---|
 | API platform, `ai_app_platform` | Settings, logging, database access, middleware, error handling, the health and sign-in endpoints, sign-in and access, audit recording, the template tables, and test helpers ([20-api-scaffold.md](20-api-scaffold.md#directory-structure)) | `apps/api/pyproject.toml`, from its `api-v{version}` git tag | 0.1.1 | Its settings, its engine and session factory, the call that configures the platform, its roles, its domain code and its migrations |
-| Web platform, `@supermanchris4/ai-app-platform-web` | The API client, the session provider and route guard, sign-in navigation, the error notice, the environment banner, `config.json`, local dates and navigation links ([40-ui.md](40-ui.md#template-conventions)) | `apps/web/package.json`, from GitHub Packages | 0.1.0 | `src/lib/api.ts`, its pages, its component kit and its Tailwind theme |
-| Mock identity provider, `ghcr.io/supermanchris4/ai-app-platform-mock-idp` | The local OpenID Connect provider ([11-local-development.md](11-local-development.md#local-mock-identity-provider)) | `infra/local/docker-compose.yml`, pinned by digest | 0.1.0 | Its roles and synthetic people, in `infra/local/mock-idp.json` |
+| Web platform, `@{platform-owner}/ai-app-platform-web` | The API client, the session provider and route guard, sign-in navigation, the error notice, the environment banner, `config.json`, local dates and navigation links ([40-ui.md](40-ui.md#template-conventions)) | `apps/web/package.json`, from GitHub Packages | 0.1.0 | `src/lib/api.ts`, its pages, its component kit and its Tailwind theme |
+| Mock identity provider, `ghcr.io/{platform-owner}/ai-app-platform-mock-idp` | The local OpenID Connect provider ([11-local-development.md](11-local-development.md#local-mock-identity-provider)) | `infra/local/docker-compose.yml`, pinned by digest | 0.1.0 | Its roles and synthetic people, in `infra/local/mock-idp.json` |
+| Terraform modules, `packages/terraform/modules` | One module per concern of the AWS infrastructure and the account bootstrap ([12-aws-deployment.md](12-aws-deployment.md#platform-modules)) | Each module's `source` in `infra/aws/` and `infra/bootstrap/`, at the commit its `terraform-v{version}` tag names | 0.1.0 | Its two Terraform roots: their inputs, names, outputs and the modules they compose, its dashboard, and any resource only it needs; the bootstrap script; the database initialisation job |
+| Reusable workflows, `.github/workflows` | The pull request checks, the Terraform checks, plan and apply, and the build and deployment ([13-delivery-pipeline.md](13-delivery-pipeline.md#workflows)) | Each call in the application's workflows, at the commit its `workflows-v{version}` tag names | 0.1.0 | Its four calling workflows, `ci.yml`, `infra-plan.yml`, `infra-apply.yml` and `deploy.yml`: their triggers, environments, permissions and inputs |
 
 The versions above are the ones the template was last checked against; an application records its own in the files listed. An application upgrades the platform packages on purpose, not through Dependabot, after reading the changelog.
 
@@ -77,7 +81,6 @@ The versions above are the ones the template was last checked against; an applic
 |---|---|---|
 | External users: the external issuer's sign-in, sessions and tokens, with the `external` actor type | [50-auth.md](50-auth.md) | F03.5 |
 | The directory lookup endpoint | [20-api-scaffold.md](20-api-scaffold.md#directory-lookup) | F03.4 |
-| The Terraform for each concern, and the pull request, infrastructure and deployment workflows | [12-aws-deployment.md](12-aws-deployment.md), [13-delivery-pipeline.md](13-delivery-pipeline.md) | F03.3 |
 
 ## API layers
 

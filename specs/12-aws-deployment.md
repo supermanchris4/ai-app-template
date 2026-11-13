@@ -2,7 +2,20 @@
 
 The AWS infrastructure for one environment of the application, defined in Terraform in `infra/aws/`, and the one-off account bootstrap in `infra/bootstrap/`. The pipelines that apply it are in [13-delivery-pipeline.md](13-delivery-pipeline.md).
 
-The platform packages do not yet include this Terraform, so the application writes it from this specification until the standard's work plan item F03.3 releases it as reusable modules in `ai-app-platform` ([10-architecture.md](10-architecture.md#platform-packages)).
+## Platform modules
+
+The resources are created by the platform's Terraform modules, released from `ai-app-platform` ([10-architecture.md](10-architecture.md#platform-packages)). The application's two roots, `infra/aws/` and `infra/bootstrap/`, compose them and hold only what is the application's own: its inputs, names and tags, its outputs, its dashboard, and any resource no other application needs. The application does not write a resource a module provides, or copy a module's code; a fix belongs in `ai-app-platform`.
+
+Each module is named by its git source at the commit its release tag names, with the tag in a comment, and every module in both roots uses the same release:
+
+```hcl
+module "database" {
+  source = "git::https://github.com/{platform-owner}/ai-app-platform.git//packages/terraform/modules/rds-postgres?ref={commit SHA}" # terraform-v{version}
+  # ...
+}
+```
+
+The commit is taken only from the release's notes or from the tag in `ai-app-platform`, never from a link, a pull request or a fork, since a public repository's address also serves commits pushed to its forks. Each module's README in `ai-app-platform` lists its inputs and outputs; the changelog says what each version changed. The modules are upgraded on purpose: change the commit and comment in every `source`, read the changelog, and check the plan.
 
 ## Principles
 
@@ -13,28 +26,28 @@ The platform packages do not yet include this Terraform, so the application writ
 
 ## Files
 
-One file per concern:
+One file per concern in `infra/aws/`:
 
-| File | Contents |
-|---|---|
-| `versions.tf` | Terraform and provider versions, provider configuration and default tags |
-| `backend.tf` | S3 state backend with native state locking, configured at `init` |
-| `variables.tf` | Inputs, all validated |
-| `locals.tf` | Names and tags |
-| `iam.tf` | ECS task and execution roles, the application deploy role |
-| `ecr.tf` | Image repository |
-| `network.tf` | Security groups only |
-| `alb.tf` | Internal load balancer, listener and target group |
-| `ecs.tf` | Cluster, task definition, service, migration task definition |
-| `rds.tf` | PostgreSQL instance and subnet group |
-| `secrets.tf` | Secrets Manager secrets for the database users, and their rotation |
-| `web.tf` | S3 bucket for the web interface and its Origin Access Control |
-| `cloudfront.tf` | Distribution, VPC origin, cache and response header policies |
-| `waf.tf` | AWS WAF web ACL |
-| `scheduler.tf` | EventBridge Scheduler schedules for scheduled tasks |
-| `monitoring.tf` | Log groups, alarms and dashboard |
-| `resource-group.tf` | The application Resource Group |
-| `outputs.tf` | Values the pipelines and runbook need |
+| File | Contents | Platform modules |
+|---|---|---|
+| `versions.tf` | Terraform and provider versions, provider configuration and default tags | |
+| `backend.tf` | S3 state backend with native state locking, configured at `init` | |
+| `variables.tf` | Inputs, all validated | |
+| `locals.tf` | Names and tags | |
+| `iam.tf` | ECS task and execution roles | `service-role` |
+| `ecr.tf` | Image repository | `ecr-repository` |
+| `network.tf` | Security groups only | `service-security-groups` |
+| `alb.tf` | Internal load balancer, listener and target group | `internal-load-balancer` |
+| `ecs.tf` | Cluster, the API's, migration and database initialisation task definitions, and the service | `ecs-cluster`, `ecs-task-definition`, `ecs-service` |
+| `rds.tf` | PostgreSQL instance, subnet group and parameter group | `rds-postgres` |
+| `secrets.tf` | Secrets Manager secrets for the database users, and their rotation | `secret`, `rotation-function` |
+| `web.tf` | S3 bucket for the web interface | `private-bucket` |
+| `cloudfront.tf` | Distribution, VPC origin, Origin Access Control, cache and response header policies | `cdn-distribution` |
+| `waf.tf` | AWS WAF web ACL | `web-acl` |
+| `scheduler.tf` | Each scheduled job's task definition, log group and schedule | `ecs-task-definition`, `log-group`, `scheduled-task` |
+| `monitoring.tf` | Log groups, alarms and the dashboard (the application's own resource) | `log-group`, `service-alarms`, `task-failure-alarm` |
+| `resource-group.tf` | The application Resource Group | `resource-group` |
+| `outputs.tf` | Values the pipelines and runbook need ([Outputs](#outputs)) | |
 
 ## Inputs
 
@@ -76,7 +89,7 @@ One CloudFront distribution is the only entry point (Standard D-06).
 - **Single-page routing.** Requests for unknown paths outside `/api/*` return `index.html`, handled by a CloudFront function rather than by error-page rewriting, so API errors are never replaced.
 - **AWS WAF.** A web ACL on the distribution with the AWS managed core rule set, the known-bad-inputs rule set, the IP reputation list and a rate-based rule per client IP on `/api/*`.
 - **Response headers.** A response headers policy sets a strict Content Security Policy (scripts, styles and connections to the application's own origin only, because the browser never calls an identity provider or another service directly), `Strict-Transport-Security`, `X-Content-Type-Options`, `Referrer-Policy` and `X-Frame-Options: DENY`.
-- **TLS.** Viewers use TLS 1.2 or later. The CloudFront to load balancer connection uses HTTPS with the `api_certificate_arn` certificate.
+- **TLS.** Viewers use TLS 1.2 or later: the `cdn-distribution` module's `minimum_tls_policy` defaults to `TLSv1.2_2021`, and an application whose consumers all support TLS 1.3 may set `TLSv1.3_2025`. The CloudFront to load balancer connection uses HTTPS with the `api_certificate_arn` certificate; the load balancer's listener uses AWS's recommended policy, `ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09`, which offers CloudFront only TLS 1.2 with forward-secret AES-GCM ciphers. The load balancer reaches the tasks over HTTP inside the VPC.
 
 Consumers call the API through the same distribution and AWS WAF, with their own tokens (Standard D-19). An application with no external users and no external consumers, whose users are all on a private network, may instead use an internal-only load balancer without CloudFront exposure. That variant is recorded as an ADR in the application's repository.
 
@@ -101,7 +114,7 @@ Consumers call the API through the same distribution and AWS WAF, with their own
 
 ## Database
 
-- RDS for PostgreSQL in `app_subnet_ids`, Multi-AZ where `db_multi_az` is set, not publicly accessible, encrypted at rest, with TLS required (`rds.force_ssl`).
+- RDS for PostgreSQL in `app_subnet_ids`, Multi-AZ where `db_multi_az` is set, not publicly accessible, encrypted at rest, with TLS required (`rds.force_ssl`) at TLS 1.2 or later (`ssl_min_protocol_version`).
 - **RDS manages the master password** in Secrets Manager. The master user is used only to create the application's users.
 - **Two application users**, each with its own Secrets Manager secret:
   - `{app}_migrator` owns the schema and is used only by the migration task.
@@ -136,19 +149,23 @@ Each scheduled job is an EventBridge Scheduler schedule that runs the API task d
 
 ## Account bootstrap
 
-`infra/bootstrap/` holds a script run once per AWS account by an operator using their own single sign-on credentials (Standard D-09). It creates:
+`infra/bootstrap/` holds a Terraform root and the script that applies it, run once per AWS account by an operator using their own single sign-on credentials (Standard D-09), never by a workflow. It creates, from the platform modules named:
 
-- the GitHub OIDC provider, unless the account already has one
-- the Terraform deploy role, trusted only by the repository's immutable ID and its GitHub Environments, with the permissions boundary
-- a read-only role for Terraform plans on pull requests
-- the Terraform state bucket, versioned and encrypted, with public access blocked
-- optionally, for an account with no network, a minimal network: one VPC with an internet gateway attached (needed for CloudFront VPC origins, not for routing), private subnets in two Availability Zones and one NAT gateway. Its outputs are the `vpc_id` and subnet inputs above, and it is shared by the applications in the account.
+- the GitHub OIDC provider, unless the account already has one (`github-oidc-provider`)
+- the permissions boundary for every role the pipelines create or use (`permissions-boundary`)
+- the Terraform deploy role, trusted only by the repository's immutable ID and its GitHub Environments, with the permissions boundary (`github-actions-role`)
+- a read-only role for Terraform plans on pull requests (`github-actions-role`)
+- the Terraform state bucket, versioned and encrypted, with public access blocked (`terraform-state-bucket`)
+- the CloudFormation role through which the `rotation-function` module installs AWS's rotation function. It is the application's own resource, and the one role without the permissions boundary, because the function's role, created from AWS's template, cannot carry it; only CloudFormation can assume it, and it may create only the rotation function and its role (the module's README)
+- optionally (`minimal-network`), for an account with no network, a minimal network: one VPC with an internet gateway attached (needed for CloudFront VPC origins, not for routing), private subnets in two Availability Zones and one NAT gateway. Its outputs are the `vpc_id` and subnet inputs above, and it is shared by the applications in the account.
 
 State locking uses S3 native locking (`use_lockfile = true`). There is no DynamoDB lock table.
 
 ## Outputs
 
-The web bucket name, CloudFront distribution ID and domain name, ECR repository URL, ECS cluster and service names, task definition families, the database secret ARNs and the Resource Group name.
+The deployment workflows read twelve outputs from `infra/aws/`, and the root provides every one: `ecr_repository_url`, `ecs_cluster_name`, `api_service_name`, `api_task_family`, `migration_task_family`, `database_init_task_family`, `job_task_families`, `task_subnet_ids`, `task_security_group_id`, `web_bucket_name`, `cloudfront_distribution_id` and `public_url`. Their types and use are the contract in the workflows' README in `ai-app-platform` ([13-delivery-pipeline.md](13-delivery-pipeline.md#platform-workflows)).
+
+The root also outputs, for the runbook: the CloudFront domain name, the database secret ARNs, the dashboard name and the Resource Group name.
 
 ## Acceptance criteria
 

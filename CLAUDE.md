@@ -15,6 +15,7 @@ Claude is the implementation agent, not the designer. All behaviour comes from t
 - Every change to behaviour updates the specification that describes it, in the same change.
 - Specifications marked **APPLICATION STUB** must be filled in before any domain code is generated.
 - Do not write or copy code the platform packages provide ([specs/10-architecture.md](specs/10-architecture.md#platform-packages)). Install them; a fix belongs in `ai-app-platform`.
+- `{platform-owner}` in the specifications stands for the owner of the `ai-app-platform` repository the application uses. Use the owner already in the application's files; if there is none, ask, and never guess or leave the placeholder in code.
 
 ## Stop rules
 
@@ -31,13 +32,13 @@ Stop and report to the user, without continuing the task, when any of these happ
 ```
 apps/api/              Python FastAPI API: all business logic, validation and access control, on the ai_app_platform package
 apps/web/              Vite React single-page app: no business rules, on the web platform package
-infra/bootstrap/       One-off AWS account bootstrap (OIDC provider, deploy roles, state bucket, optional network)
-infra/aws/             Terraform for the deployed application, one file per concern
+infra/bootstrap/       One-off AWS account bootstrap (OIDC provider, deploy roles, state bucket, optional network), on the platform's Terraform modules
+infra/aws/             Terraform for the deployed application, one file per concern, on the platform's Terraform modules
 infra/local/           Docker Compose for local PostgreSQL, the platform's mock identity provider and the API
 specs/                 Specifications: the source of truth for what is built
 adrs/                  This application's own decision records, including deviations from the standard
 docs/                  The delivery plan and runbooks for this application
-.github/workflows/     Test, infrastructure and deployment pipelines
+.github/workflows/     Test, infrastructure and deployment pipelines, calling the platform's reusable workflows
 ```
 
 ## Local commands

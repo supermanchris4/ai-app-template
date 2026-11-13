@@ -2,7 +2,7 @@
 
 How changes move from a pull request to production, in GitHub Actions workflows in `.github/workflows/`. This is where the SDLC gates bind to the tooling (Standard D-07 and D-15).
 
-The platform packages do not yet include these workflows, so the application writes them from this specification until the standard's work plan item F03.3 releases them as reusable workflows in `ai-app-platform` ([10-architecture.md](10-architecture.md#platform-packages)).
+The work is done by the platform's reusable workflows, released from `ai-app-platform` ([Platform workflows](#platform-workflows)). The application writes only the four workflows that call them.
 
 ## Environments and gates
 
@@ -16,13 +16,30 @@ Each merge to `main` produces one build: one API image, identified by its digest
 
 ## Workflows
 
-| Workflow | Trigger | What it does |
-|---|---|---|
-| `ci.yml` | Every pull request, and pushes to `main` | The checks below. Required to pass before merge. |
-| `infra-plan.yml` | Pull requests that change `infra/` | `terraform plan` for each environment with the read-only role, posted to the pull request |
-| `infra-apply.yml` | Merge to `main` changing `infra/`, or on request | `terraform apply` for `dev`, then `test` and `prod` through their approved environments |
-| `deploy.yml` | Merge to `main`, or on request with an environment | On merge, builds once and deploys to `dev`. On request, deploys an existing build to the chosen environment |
-| `bootstrap.yml` | Not used | The bootstrap runs from an operator's machine with their own credentials ([12-aws-deployment.md](12-aws-deployment.md#account-bootstrap)) |
+| Workflow | Trigger | What it does | Platform workflows it calls |
+|---|---|---|---|
+| `ci.yml` | Every pull request, and pushes to `main` | The checks below. Required to pass before merge. | `python-checks`, `web-checks`, `contract-check`, `terraform-checks`, `image-checks`, `security-checks`, `workflow-checks` |
+| `infra-plan.yml` | Pull requests that change `infra/` | `terraform plan` for each environment with the read-only role, posted to the pull request | `terraform-plan`, once per environment |
+| `infra-apply.yml` | Merge to `main` changing `infra/`, or on request | `terraform apply` for `dev`, then `test` and `prod` through their approved environments | `terraform-apply`, once per environment |
+| `deploy.yml` | Merge to `main`, or on request with an environment | On merge, builds once and deploys to `dev`. On request, deploys an existing build to the chosen environment | `build-application`, then `deploy-application` per environment |
+| `bootstrap.yml` | Not used | The bootstrap runs from an operator's machine with their own credentials ([12-aws-deployment.md](12-aws-deployment.md#account-bootstrap)) | |
+
+## Platform workflows
+
+Each calling job names the platform workflow at the commit its release tag names, with the tag in a comment, as for every action, and every call uses the same release:
+
+```yaml
+jobs:
+  api:
+    name: API
+    permissions:
+      contents: read
+    uses: {platform-owner}/ai-app-platform/.github/workflows/python-checks.yml@{commit SHA} # workflows-v{version}
+    with:
+      working-directory: apps/api
+```
+
+The commit is taken only from the release's notes or from the tag in `ai-app-platform`, never from a link, a pull request or a fork, since a public repository's address also serves commits pushed to its forks. The calling workflow holds the trigger, the GitHub Environment, the inputs and the permissions: a reusable workflow's jobs have no more permission than the calling job grants, so each calling job grants what the workflow's README lists, and no more. The README in `ai-app-platform`'s `.github/workflows` lists each workflow's inputs, and the Terraform outputs the build and deployment read ([12-aws-deployment.md](12-aws-deployment.md#outputs)). The workflows are upgraded on purpose: change the commit and comment in every call, read the changelog, and run the pipelines.
 
 ## Pull request checks
 
@@ -31,9 +48,10 @@ Each merge to `main` produces one build: one API image, identified by its digest
 | API | Ruff lint and format check, Pyright in strict mode, unit tests, integration tests against a PostgreSQL service container, coverage thresholds |
 | Web interface | ESLint, Prettier check, TypeScript type check, Vitest, build, Playwright and accessibility checks against the built app |
 | Contract | The OpenAPI document generated from the API matches the committed one used to generate the web client |
-| Infrastructure | `terraform fmt -check`, `terraform validate`, infrastructure security scanning |
+| Infrastructure | `terraform fmt -check`, `terraform validate`, `terraform test`, infrastructure security scanning |
 | Images | Build the API image; scan it for vulnerabilities |
 | Security | Code scanning, dependency review and secret scanning (GitHub's own features where the plan provides them, otherwise open-source equivalents such as gitleaks) |
+| Workflows | actionlint, with shellcheck, over `.github/workflows` |
 
 ## Application deployment
 
@@ -65,7 +83,9 @@ To deploy to an environment:
 
 ## Workflow hardening
 
-- Every third-party action is pinned to a full commit SHA, with the version in a comment. Dependabot proposes updates.
+- Every third-party action and reusable workflow is pinned to a full commit SHA, with the version in a comment. Dependabot proposes updates to actions; the platform workflows are upgraded on purpose ([Platform workflows](#platform-workflows)).
+- The repository requires actions to be pinned to a full commit SHA (Settings → Actions → General), and its default workflow token is read-only.
+- A public repository requires approval before workflows run on pull requests from all external contributors.
 - `permissions: {}` at the top of each workflow; each job is granted only the permissions it needs (for example `id-token: write` and `contents: read` for a deploy job).
 - Jobs run on GitHub-hosted runners.
 - `pull_request_target` is not used.
