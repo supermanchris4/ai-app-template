@@ -49,7 +49,7 @@ What the package provides, by module of `ai_app_platform`:
 | `errors` | The error response shape, `error_body` and `install_error_handlers` |
 | `routes` | `GET /api/health` and the `/api/auth/` sign-in endpoints |
 | `schemas` | The error and pagination schemas |
-| `migrations` | `create_platform_tables`, and `grant_runtime` and `revoke_runtime` for the runtime database user |
+| `migrations` | `create_platform_tables` and `add_platform_change_stamps` (with `drop_platform_change_stamps`), and `grant_runtime` and `revoke_runtime` for the runtime database user |
 | `logging_config` | The JSON log formatter |
 | `testing` | `TestIssuer`, the test key pair the application's tests sign tokens with |
 
