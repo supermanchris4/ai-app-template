@@ -30,6 +30,8 @@ Created from ai-app-template at {commit SHA} on {date}.
 
 The platform code is installed from the packages released by `ai-app-platform`, never generated or copied ([specs/10-architecture.md](specs/10-architecture.md#platform-packages), which names the versions). None of them needs a GitHub or AWS secret.
 
+In the commands and files below, and in the specifications, replace `{platform-owner}` with the GitHub account or organisation that owns the `ai-app-platform` repository you take the packages from, in lower case. A fork of `ai-app-platform` publishes its packages under its own owner.
+
 **API platform.** In `apps/api/pyproject.toml`, depend on `ai-app-platform` and install it from its release tag. `uv.lock` records the tag's commit. uv fetches git sources with `git`, so the image's build stage installs it ([specs/20-api-scaffold.md](specs/20-api-scaffold.md#container-image)). Do not install the wheel attached to the release instead: Dependabot cannot check its download link, and then updates none of the API's dependencies.
 
 ```toml
@@ -37,7 +39,7 @@ The platform code is installed from the packages released by `ai-app-platform`, 
 dependencies = ["ai-app-platform=={version}"]
 
 [tool.uv.sources]
-ai-app-platform = { git = "https://github.com/supermanchris4/ai-app-platform", tag = "api-v{version}", subdirectory = "packages/api" }
+ai-app-platform = { git = "https://github.com/{platform-owner}/ai-app-platform", tag = "api-v{version}", subdirectory = "packages/api" }
 ```
 
 **Web platform.** It is published to GitHub Packages, whose npm registry needs a token to read even a public package.
@@ -45,18 +47,18 @@ ai-app-platform = { git = "https://github.com/supermanchris4/ai-app-platform", t
 1. Create `apps/web/.npmrc`, which names the registry only and never holds a token:
 
    ```ini
-   @supermanchris4:registry=https://npm.pkg.github.com
+   @{platform-owner}:registry=https://npm.pkg.github.com
    min-release-age=7
    ```
 
 2. On each developer's machine, sign in once with a personal access token (classic) that has only the `read:packages` scope and an expiry date. npm keeps it in the developer's own `~/.npmrc`:
 
    ```bash
-   npm login --scope=@supermanchris4 --auth-type=legacy --registry=https://npm.pkg.github.com
+   npm login --scope=@{platform-owner} --auth-type=legacy --registry=https://npm.pkg.github.com
    ```
 
-3. Install it at an exact version: `npm --prefix apps/web install --save-exact @supermanchris4/ai-app-platform-web@{version}`.
-4. Give every workflow job that runs `npm ci` the `packages: read` permission, and `NODE_AUTH_TOKEN: ${{ github.token }}` with `actions/setup-node`'s `registry-url: https://npm.pkg.github.com` and `scope: "@supermanchris4"`. The run's own token reads the package.
+3. Install it at an exact version: `npm --prefix apps/web install --save-exact @{platform-owner}/ai-app-platform-web@{version}`.
+4. Give every workflow job that runs `npm ci` the `packages: read` permission, and `NODE_AUTH_TOKEN: ${{ github.token }}` with `actions/setup-node`'s `registry-url: https://npm.pkg.github.com` and `scope: "@{platform-owner}"`. The run's own token reads the package.
 5. Add the package's build to the Tailwind `content` setting ([specs/40-ui.md](specs/40-ui.md#template-conventions)).
 
 `min-release-age=7` makes npm wait seven days before using a newly published version, as uv's `exclude-newer` does for the API. It applies to the platform's own releases too; for an urgent platform fix, install that one version with `--min-release-age=0`.
@@ -65,12 +67,24 @@ ai-app-platform = { git = "https://github.com/supermanchris4/ai-app-platform", t
 
 ```yaml
 mock-idp:
-  image: ghcr.io/supermanchris4/ai-app-platform-mock-idp:{version}@sha256:{digest}
+  image: ghcr.io/{platform-owner}/ai-app-platform-mock-idp:{version}@sha256:{digest}
   environment:
     MOCK_IDP_CONFIG: /config/mock-idp.json
   volumes:
     - ./mock-idp.json:/config/mock-idp.json:ro
 ```
+
+**Terraform modules.** `infra/aws/` and `infra/bootstrap/` compose the platform's modules, each named by its git source at the commit its `terraform-v{version}` tag names, with the tag in a comment ([specs/12-aws-deployment.md](specs/12-aws-deployment.md#platform-modules)). Terraform fetches them from the public repository with no credential.
+
+**Reusable workflows.** `ci.yml`, `infra-plan.yml`, `infra-apply.yml` and `deploy.yml` call the platform's workflows at the commit their `workflows-v{version}` tag names, with the tag in a comment, granting each the permissions its README lists ([specs/13-delivery-pipeline.md](specs/13-delivery-pipeline.md#platform-workflows)).
+
+Take each commit from the release's notes, or from the tag:
+
+```bash
+git ls-remote https://github.com/{platform-owner}/ai-app-platform 'refs/tags/terraform-v{version}^{}' refs/tags/terraform-v{version}
+```
+
+Use the line ending `^{}` if there is one, and otherwise the other line. Never take a commit from a link, a pull request or a fork.
 
 Each package's README in `ai-app-platform` has the full detail, and its `CHANGELOG.md` says what each version changed. Upgrade the platform packages on purpose, not through Dependabot: change the version, read the changelog, and run the tests.
 

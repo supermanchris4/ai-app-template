@@ -28,8 +28,10 @@ The platform code the template specifies is released as packages from `ai-app-pl
 | The API platform: settings, logging, database access, middleware, error handling, health, sign-in and access, audit recording, the template tables and test helpers | Its settings, roles, domain code, routes, migrations and tests |
 | The web platform: the API client, the session provider, the route guard, sign-in navigation, the error notice, the environment banner, local dates and navigation links | `src/lib/api.ts`, its pages, its component kit and its theme |
 | The mock identity provider image | Its roles and synthetic people file |
+| The Terraform modules, one per concern of the AWS infrastructure and the account bootstrap | Its two Terraform roots, which compose them, and its database initialisation job |
+| The reusable workflows: the pull request checks, the Terraform checks, plan and apply, and the build and deployment | The four workflows that call them |
 
-Not yet in the packages, so written by the application from the specifications: external users, the directory lookup, and the Terraform and workflows. The standard's work plan (`work/README.md`) schedules each.
+Not yet in the packages, so written by the application from the specifications: external users and the directory lookup. The standard's work plan (`work/README.md`) schedules each.
 
 ## Status
 
