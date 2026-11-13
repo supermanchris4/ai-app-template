@@ -30,7 +30,7 @@ Stop and report to the user, without continuing the task, when any of these happ
 
 ```
 apps/api/              Python FastAPI API: all business logic, validation and access control, on the ai_app_platform package
-apps/web/              Vite React single-page app: no business rules, on the @supermanchris4/ai-app-platform-web package
+apps/web/              Vite React single-page app: no business rules, on the web platform package
 infra/bootstrap/       One-off AWS account bootstrap (OIDC provider, deploy roles, state bucket, optional network)
 infra/aws/             Terraform for the deployed application, one file per concern
 infra/local/           Docker Compose for local PostgreSQL, the platform's mock identity provider and the API

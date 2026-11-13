@@ -61,7 +61,7 @@ These are the template's working versions (Standard configuration default C-02).
 
 ## Platform packages
 
-The platform code every application needs is released as packages from [`ai-app-platform`](https://github.com/supermanchris4/ai-app-platform), a public repository. An application installs each at a released version and keeps no copy of its code. It writes only what the last column lists. A fix to platform code is made in `ai-app-platform` and reaches an application as a new version. Each package's README says how to use it, and its `CHANGELOG.md` says what each version changed.
+The platform code every application needs is released as packages from `ai-app-platform`, a public repository. An application installs each at a released version and keeps no copy of its code. It writes only what the last column lists. A fix to platform code is made in `ai-app-platform` and reaches an application as a new version. Each package's README says how to use it, and its `CHANGELOG.md` says what each version changed.
 
 | Package | Provides | Installed in | Version | The application writes |
 |---|---|---|---|---|

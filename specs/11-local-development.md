@@ -21,7 +21,7 @@ All services join one bridge network, `local_net`. The application prefix (`app`
 | Service | Purpose | Image or build | Host port | Starts after |
 |---|---|---|---|---|
 | `postgres` | Local database | PostgreSQL image at the version the RDS instance uses, pinned by digest | `5432` | |
-| `mock-idp` | Stands in for the internal and external issuers | The platform's released image, `ghcr.io/supermanchris4/ai-app-platform-mock-idp`, pinned by version and digest ([10-architecture.md](10-architecture.md#platform-packages)) | `9000` | |
+| `mock-idp` | Stands in for the internal and external issuers | The platform's released mock identity provider image, pinned by version and digest ([10-architecture.md](10-architecture.md#platform-packages)) | `9000` | |
 | `api` | The API, with source mounted and auto-reload | Built from `apps/api/Dockerfile` | `8000` | `postgres` and `mock-idp` healthy |
 | `migrate` | Applies migrations (`alembic upgrade head`), then exits. In the `tools` profile, so it runs only on request. | Same as `api` | | `postgres` healthy |
 

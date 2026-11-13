@@ -21,7 +21,7 @@ To create an application from the template, follow [TEMPLATE_USAGE.md](TEMPLATE_
 
 ## What an application writes and what it takes
 
-The platform code the template specifies is released as packages from [`ai-app-platform`](https://github.com/supermanchris4/ai-app-platform), and an application installs them at a version rather than writing them ([specs/10-architecture.md](specs/10-architecture.md#platform-packages)):
+The platform code the template specifies is released as packages from `ai-app-platform`, and an application installs them at a version rather than writing them ([specs/10-architecture.md](specs/10-architecture.md#platform-packages)):
 
 | From the platform | Written by the application |
 |---|---|
@@ -33,7 +33,7 @@ Not yet in the packages, so written by the application from the specifications: 
 
 ## Status
 
-The template holds specifications and repository settings only; an application generates its own code from them, taking the platform code from the packages above. The platform code was first built inside identity-spine, the first application, and then extracted into the packages (the standard's work plan, Feature F03.2).
+The template holds specifications and repository settings only; an application generates its own code from them, taking the platform code from the packages above. The platform code was first built inside the first application built to the standard, and then extracted into the packages (the standard's work plan, Feature F03.2).
 
 ## Licence
 
