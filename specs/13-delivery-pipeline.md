@@ -1,6 +1,6 @@
 # Delivery pipeline
 
-How changes move from a pull request to production, in GitHub Actions workflows in `.github/workflows/`. This is where the SDLC gates bind to the tooling (Standard D-07 and D-15).
+How changes move from a pull request to production, in GitHub Actions workflows in `.github/workflows/`. This is where the SDLC gates bind to the tooling (Standard ADR-0007 and ADR-0015).
 
 The work is done by the platform's reusable workflows, released from `ai-app-platform` ([Platform workflows](#platform-workflows)). The application writes only the four workflows that call them.
 

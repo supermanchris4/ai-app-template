@@ -1,6 +1,6 @@
 # Local development
 
-How the application runs on a developer's machine. Developers work in WSL with Docker Engine, with the repository cloned into the WSL Linux filesystem (Standard D-11). Workstation setup is in the developer setup guide in the AI application standard.
+How the application runs on a developer's machine. Developers work in WSL with Docker Engine, with the repository cloned into the WSL Linux filesystem (Standard ADR-0011). Workstation setup is in the developer setup guide in the AI application standard.
 
 Local development needs no real secret. Sign-in uses the local mock identity provider, and AWS access, where needed, uses the developer's own single sign-on session.
 

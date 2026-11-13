@@ -1,10 +1,10 @@
 # Authentication and authorisation
 
-How internal users, external users and other systems sign in and what they may do. The implementation is in [20-api-scaffold.md](20-api-scaffold.md#authentication-and-authorisation). The model follows Standard D-03, D-04, D-10 and D-18.
+How internal users, external users and other systems sign in and what they may do. The implementation is in [20-api-scaffold.md](20-api-scaffold.md#authentication-and-authorisation). The model follows Standard ADR-0003, ADR-0004, ADR-0010 and ADR-0018.
 
 ## Identity providers
 
-The API trusts one or two OpenID Connect issuers, each configured by its discovery URL ([20-api-scaffold.md](20-api-scaffold.md#settings)). Entra ID is the default internal issuer and Entra External ID the default external issuer (Standard D-04). An application with no external users configures only the internal issuer.
+The API trusts one or two OpenID Connect issuers, each configured by its discovery URL ([20-api-scaffold.md](20-api-scaffold.md#settings)). Entra ID is the default internal issuer and Entra External ID the default external issuer (Standard ADR-0004). An application with no external users configures only the internal issuer.
 
 | Who | Issuer | How they reach the API |
 |---|---|---|

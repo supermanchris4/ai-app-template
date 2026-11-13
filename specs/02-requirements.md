@@ -12,7 +12,7 @@ The single source of functional and non-functional requirements. Other specifica
 4. Functional requirements (`FR-*`), with one subsection per functional area
 5. Data requirements, including the data classification
 6. Integration requirements
-7. Reporting and data supply requirements, placing each need as Standard D-17 sets out: operational screens in the application, defined exports or integrations for data supplied to other organisations and systems, and any separate BI tool only through an ADR
+7. Reporting and data supply requirements, placing each need as Standard ADR-0017 sets out: operational screens in the application, defined exports or integrations for data supplied to other organisations and systems, and any separate BI tool only through an ADR
 8. Regulatory and compliance requirements (`CMP-*`)
 9. Non-functional requirements (`NFR-*`)
 
@@ -76,10 +76,22 @@ Every requirement, whatever its ID prefix, uses this format:
 
 **Acceptance:** {observable behaviour or measurable outcome}
 
+**Status:** {Proposed, Agreed or Validated, with who and when for Agreed and Validated}
+
 **Implemented by:** {specification references, added as work progresses}
 ```
 
 For example `### FR-INSP-01: Record an inspection`, `### NFR-PERF-01: API response time` or `### CMP-03: Retain inspection records`. Non-functional acceptance states a measurable target, such as "95% of API requests complete within 500 ms". Compliance acceptance states how compliance is shown, such as an audit record, a report or a retention job.
+
+The status records how far the business has confirmed the requirement. Code does not wait for it.
+
+| Status | Meaning |
+|---|---|
+| `Proposed` | Written, and not yet agreed by the business |
+| `Agreed` | The business has agreed the requirement before using what implements it |
+| `Validated` | The business has confirmed the requirement after using what implements it, at a demonstration or in acceptance testing |
+
+Agreement comes before validation because a requirement can read correctly and still turn out, once it is used, to mean something other than what the business intended. A requirement that use shows to be wrong is rewritten, and it is then agreed or validated again. The requirements under [Met by the template](#met-by-the-template) are set by the technology standards rather than by the business, so they have no status.
 
 ## Non-functional requirements
 
@@ -93,9 +105,11 @@ Replace each default with a target agreed with the business owner before deploym
 
 **Priority:** Must
 
-**Rationale:** Template default, to be confirmed with the business owner.
+**Rationale:** Template default.
 
 **Acceptance:** 95% of API requests complete within 500 ms, measured at the load balancer in `prod`.
+
+**Status:** Proposed
 
 **Implemented by:** [12-aws-deployment.md](12-aws-deployment.md#monitoring) (alarm on target response time)
 
@@ -105,9 +119,11 @@ Replace each default with a target agreed with the business owner before deploym
 
 **Priority:** Must
 
-**Rationale:** Template default, to be confirmed with the business owner.
+**Rationale:** Template default.
 
 **Acceptance:** 99.5% availability during operating hours, measured monthly in `prod`.
+
+**Status:** Proposed
 
 **Implemented by:** [12-aws-deployment.md](12-aws-deployment.md#inputs) (`api_desired_count` and `db_multi_az`), [12-aws-deployment.md](12-aws-deployment.md#compute)
 
@@ -117,9 +133,11 @@ Replace each default with a target agreed with the business owner before deploym
 
 **Priority:** Must
 
-**Rationale:** Template default, to be confirmed with the business owner.
+**Rationale:** Template default.
 
 **Acceptance:** At most 1 hour of data is lost in `prod`, and at most 24 hours in `dev`.
+
+**Status:** Proposed
 
 **Implemented by:** [12-aws-deployment.md](12-aws-deployment.md#database)
 
@@ -129,9 +147,11 @@ Replace each default with a target agreed with the business owner before deploym
 
 **Priority:** Must
 
-**Rationale:** Template default, to be confirmed with the business owner.
+**Rationale:** Template default.
 
 **Acceptance:** Service is restored within 4 hours in `prod`, and within 1 business day in `dev`.
+
+**Status:** Proposed
 
 **Implemented by:** [12-aws-deployment.md](12-aws-deployment.md#database)
 
@@ -141,9 +161,11 @@ Replace each default with a target agreed with the business owner before deploym
 
 **Priority:** Must
 
-**Rationale:** Template default, to be confirmed with the business owner. It sets the default sizing.
+**Rationale:** Template default. It sets the default sizing.
 
 **Acceptance:** Tens to low hundreds of concurrent users. The application team sets the record volumes.
+
+**Status:** Proposed
 
 **Implemented by:** [12-aws-deployment.md](12-aws-deployment.md#inputs) (`api_cpu`, `api_memory`, `db_instance_class` and `db_allocated_storage`)
 

@@ -98,7 +98,7 @@ There is no setting that turns authentication off, and no cross-origin (CORS) se
 
 - SQLAlchemy 2.x with `pool_pre_ping`, a pool of 5 and an overflow of 10.
 - The API connects as the application's runtime database user, which can read and write data but cannot change the schema. Only the migration step connects as the migration user ([12-aws-deployment.md](12-aws-deployment.md#database)).
-- In deployed environments, `database.py` fetches the runtime user's credentials from Secrets Manager (`DATABASE_CREDENTIALS_SECRET_ARN`) when it opens a connection, and reuses them for `DATABASE_CREDENTIALS_CACHE_SECONDS`. If a connection fails authentication, it fetches the credentials again once before failing. A rotated password is therefore picked up without a redeployment (Standard D-13).
+- In deployed environments, `database.py` fetches the runtime user's credentials from Secrets Manager (`DATABASE_CREDENTIALS_SECRET_ARN`) when it opens a connection, and reuses them for `DATABASE_CREDENTIALS_CACHE_SECONDS`. If a connection fails authentication, it fetches the credentials again once before failing. A rotated password is therefore picked up without a redeployment (Standard ADR-0013).
 - Connections use TLS with `sslmode=verify-full`, verifying the server against the Amazon RDS certificate bundle copied into the image.
 - The session dependency yields a session, commits on success, rolls back on exception and always closes the session. It is declared with `Depends(get_db, scope="function")`, so the commit happens before the response is sent. With FastAPI's default scope, the code after `yield` runs once the response has gone, and a client could act on a write that is not yet committed, or be told a write succeeded when its commit then fails.
 
@@ -184,7 +184,7 @@ The container health check, the load balancer health check and the pipeline's ch
 
 ## Directory lookup
 
-`GET /api/v1/directory/users?search={text}` finds internal users in the internal issuer's directory (Microsoft Graph for Entra ID) for pickers in the web interface. It is optional, and the only path to the directory; it is not yet in the platform package, so an application that needs it writes it (the standard's work plan item F03.4); the web interface never calls the directory directly (Standard D-10).
+`GET /api/v1/directory/users?search={text}` finds internal users in the internal issuer's directory (Microsoft Graph for Entra ID) for pickers in the web interface. It is optional, and the only path to the directory; it is not yet in the platform package, so an application that needs it writes it (the standard's work plan item F03.4); the web interface never calls the directory directly (Standard ADR-0010).
 
 - Available only when `DIRECTORY_ENABLED` is true, and to the roles listed for it in [21-api.md](21-api.md).
 - Requires at least three characters of search text and returns at most 25 people.

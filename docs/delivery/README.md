@@ -47,7 +47,7 @@ Update the plan when a release is planned or when feedback on a release changes 
 
 - **Each release takes Features from several Epics.** A capability is built out over several releases, so feedback on an early release can still change it.
 - **Each release runs and is accepted locally.** AWS environments join when their dependencies are in place and do not hold up a release.
-- **A release is accepted** when its pull request checks pass and its business reviewers have used it. Once `dev` exists, the release is also deployed there and passes its health check. Feedback updates the requirements and specifications, then the plan for the next release.
+- **A release is accepted** when its pull request checks pass and its business reviewers have used it. Once `dev` exists, the release is also deployed there and passes its health check. The reviewers confirm or change each requirement the release implements: a confirmed requirement becomes `Validated` ([requirement status](../../specs/02-requirements.md#entry-format)), and feedback updates the requirements and specifications, then the plan for the next release.
 
 ## Standard tasks
 

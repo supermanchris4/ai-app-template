@@ -9,7 +9,7 @@ There are two kinds of specification:
 - **Template specifications** set the architecture and conventions every application shares. An application extends them but does not remove their rules. An application that needs to depart from one records an ADR in [adrs/](../adrs/) first.
 - **Application stubs** are marked **APPLICATION STUB**. The application team fills them in with the application's domain before any domain code is generated.
 
-References in the form "Standard D-04" point to decision D-04 in the AI application standard (the `ai-app-standard` repository), which gives the reasons. Once a decision is confirmed it is recorded there as the ADR with the same number (ADR-0004).
+References in the form "Standard ADR-0004" point to ADR-0004 in the AI application standard (the `ai-app-standard` repository), which records the decision, its options and the reasons.
 
 ## Numbering
 
@@ -39,6 +39,7 @@ The first digit of a specification's number is its group, and the second is its 
 | [20-api-scaffold.md](20-api-scaffold.md) | Template | API code structure, settings, authentication, middleware and tests |
 | [21-api.md](21-api.md) | Application stub with template conventions | API endpoints, on the shared conventions |
 | [22-domain-logic.md](22-domain-logic.md) | Application stub | Business rules, state, calculations and reason codes |
+| [23-application-rules.md](23-application-rules.md) | Template | The rules every application follows, whatever its domain, by ID |
 | [30-data-model.md](30-data-model.md) | Application stub with template conventions | Tables, conventions and data classification |
 | [31-audit.md](31-audit.md) | Template | Audit trail rules |
 | [40-ui.md](40-ui.md) | Application stub with template conventions | Web interface pages, on the shared conventions |
