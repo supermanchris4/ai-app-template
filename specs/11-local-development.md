@@ -1,6 +1,6 @@
 # Local development
 
-How the application runs on a developer's machine. Developers work in WSL with Docker Engine, with the repository cloned into the WSL Linux filesystem (Standard D-11). Workstation setup is in the developer setup guide in the AI application standard.
+How the application runs on a developer's machine. Developers work in WSL with Docker Engine, with the repository cloned into the WSL Linux filesystem (Standard ADR-0011). Workstation setup is in the developer setup guide in the AI application standard.
 
 Local development needs no real secret. Sign-in uses the local mock identity provider, and AWS access, where needed, uses the developer's own single sign-on session.
 
@@ -10,6 +10,7 @@ Local development needs no real secret. Sign-in uses the local mock identity pro
 |---|---|
 | `infra/local/docker-compose.yml` | The local services |
 | `infra/local/.env.example` | Local settings, copied to `infra/local/.env` (which git ignores) |
+| `infra/local/ca-certificates.crt` | A copy of the developer's certificate bundle for image builds (which git ignores) |
 | `infra/local/postgres-init/` | SQL run when the database volume is first created |
 | `infra/local/mock-idp.json` | The application's roles and synthetic people, for the local mock identity provider |
 | `infra/local/README.md` | The commands below |
@@ -32,6 +33,10 @@ The web interface is not containerised locally. It runs on the Vite development 
 **API.** Runs with `APP_ENVIRONMENT=local` and `APP_PUBLIC_URL=http://localhost:5173`, connecting as `app_runtime` with `DATABASE_SSL_MODE=disable`. The health check calls `/api/health`.
 
 **Migrate.** Connects as `app_migrator`, the same split as the deployed migration task.
+
+### Image builds
+
+Where the developer's network inspects encrypted traffic, re-signing it with its own root certificate, the images built locally download packages through it. `docker-compose.yml` defines a secret, `corporate_ca`, from `./ca-certificates.crt`, and the `api` build uses it. The Dockerfile mounts it as [20-api-scaffold.md](20-api-scaffold.md#container-image) describes. The file is a copy of the machine's certificate bundle, `/etc/ssl/certs/ca-certificates.crt`, which holds the network's root as well as the public ones after the developer setup guide's certificate step. It must be a copy rather than a link, because Compose builds read only files inside the project unless granted wider access. Where the network does not inspect traffic, the copy holds only the public roots and changes nothing.
 
 ## Local mock identity provider
 
@@ -76,6 +81,7 @@ Run from the repository root. `infra/local/README.md` lists the same commands.
 | Task | Command |
 |---|---|
 | Create local settings (once) | `cp infra/local/.env.example infra/local/.env` |
+| Copy the certificate bundle (once, and again after the machine's certificates change) | `cp /etc/ssl/certs/ca-certificates.crt infra/local/ca-certificates.crt` |
 | Start the database, identity provider and API | `docker compose -f infra/local/docker-compose.yml --env-file infra/local/.env up -d postgres mock-idp api` |
 | Apply migrations | `docker compose -f infra/local/docker-compose.yml --env-file infra/local/.env --profile tools run --rm migrate` |
 | Start the web interface | `npm --prefix apps/web run dev` |
@@ -85,12 +91,12 @@ Run from the repository root. `infra/local/README.md` lists the same commands.
 
 ## Acceptance criteria
 
-- On a clean machine, the start command brings up `postgres`, `mock-idp` and `api`, and all report healthy.
+- On a clean machine, including one on a network that inspects encrypted traffic, the start command builds the images and brings up `postgres`, `mock-idp` and `api`, and all report healthy.
 - The API starts only after the database and identity provider are healthy.
 - `GET http://localhost:8000/api/health` returns 200.
 - The web interface at `http://localhost:5173` signs an internal user in through the mock provider, receives the session cookie and calls the API through the proxy. The same works for an external user.
 - A bearer token from the mock provider is accepted by the API, and a token signed by any other key is rejected.
-- Migrations run through `migrate` without installing tools on the host.
+- Schema migrations run through `migrate` without installing tools on the host.
 - Data survives a restart, and `down -v` removes it.
 
 ## Not in the local baseline

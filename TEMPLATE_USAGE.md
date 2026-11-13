@@ -51,11 +51,7 @@ ai-app-platform = { git = "https://github.com/{platform-owner}/ai-app-platform",
    min-release-age=7
    ```
 
-2. On each developer's machine, sign in once with a personal access token (classic) that has only the `read:packages` scope and an expiry date. npm keeps it in the developer's own `~/.npmrc`:
-
-   ```bash
-   npm login --scope=@{platform-owner} --auth-type=legacy --registry=https://npm.pkg.github.com
-   ```
+2. On each developer's machine, npm reads a personal access token (classic) that has only the `read:packages` scope and an expiry date from the `GITHUB_PACKAGES_TOKEN` environment variable. The token is held in the operating system's credential store and is never written to a file, as the standard's developer setup guide describes (`docs/developer-setup.md` in `ai-app-standard`, "Access the platform packages").
 
 3. Install it at an exact version: `npm --prefix apps/web install --save-exact @{platform-owner}/ai-app-platform-web@{version}`.
 4. Give every workflow job that runs `npm ci` the `packages: read` permission, and `NODE_AUTH_TOKEN: ${{ github.token }}` with `actions/setup-node`'s `registry-url: https://npm.pkg.github.com` and `scope: "@{platform-owner}"`. The run's own token reads the package.

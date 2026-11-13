@@ -23,6 +23,7 @@ The rules Claude must follow when generating code in this repository. They overr
 
 ## Business rules and validation
 
+- **The application rules apply.** Generated code follows every rule in [23-application-rules.md](23-application-rules.md), as well as the application's own rules in [22-domain-logic.md](22-domain-logic.md).
 - **All business logic is in the API.** Rules, calculations, state changes and outcomes are worked out by the API services. The web interface and other clients only collect input and show results.
 - **Outcomes are calculated and stored by the API.** When a rule produces a result (a status, a score, a compliance outcome, a flag), the API calculates it and stores it with the record, together with the version of the rule configuration used. Clients never calculate it themselves, and reports read the stored value.
 - **Thresholds are configuration, not code.** Numeric limits, time windows and other rule parameters are held in versioned configuration (a configuration table or file under version control), never as literals in code. Changing a threshold creates a new version and leaves earlier outcomes traceable to the version that produced them.
@@ -49,7 +50,7 @@ The rules Claude must follow when generating code in this repository. They overr
 | Rule | Value |
 |---|---|
 | Formatter and linter | Ruff, configured in `pyproject.toml` |
-| Type checker | Pyright in strict mode, configured in `pyproject.toml` (Standard D-02) |
+| Type checker | Pyright in strict mode, configured in `pyproject.toml` (Standard ADR-0002) |
 | Indentation | 4 spaces |
 | Encoding and line endings | UTF-8, LF |
 | Type hints | Required on every function signature |
@@ -99,6 +100,7 @@ The rules Claude must follow when generating code in this repository. They overr
 | Fixtures | pytest fixtures and factory functions producing synthetic data |
 | Coverage | At least 80% for services and 70% overall, enforced in CI |
 | Naming | `test_{module}.py`, with one test function per behaviour |
+| Requirements | Each test's docstring starts with the requirements it verifies, such as `"""Verifies FR-INSP-01. ..."""`. A test that verifies no requirement, such as one for a helper, says `Verifies no requirement.` |
 
 ## TypeScript (web interface)
 
@@ -110,7 +112,7 @@ The rules Claude must follow when generating code in this repository. They overr
 | Sign-in | Through the API's `/api/auth/` endpoints only. No sign-in library, and no token handling or storage, in the browser. |
 | Components | Extend the kit in `components/ui/`. Do not add a component library that duplicates it. |
 | Role checks | Decide only what is shown. The API enforces access. |
-| Tests | Vitest for components, Playwright for end-to-end journeys, automated accessibility checks on every page |
+| Tests | Vitest for components, Playwright for end-to-end journeys, automated accessibility checks on every page. Each test's title starts with the requirements it verifies, such as `FR-INSP-01: records an inspection`, or with `No requirement: ` for a test that verifies none |
 
 ## Terraform
 

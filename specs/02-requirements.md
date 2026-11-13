@@ -12,7 +12,7 @@ The single source of functional and non-functional requirements. Other specifica
 4. Functional requirements (`FR-*`), with one subsection per functional area
 5. Data requirements, including the data classification
 6. Integration requirements
-7. Reporting and data supply requirements, placing each need as Standard D-17 sets out: operational screens in the application, defined exports or integrations for data supplied to other organisations and systems, and any separate BI tool only through an ADR
+7. Reporting and data supply requirements, placing each need as Standard ADR-0017 sets out: operational screens in the application, defined exports or integrations for data supplied to other organisations and systems, and any separate BI tool only through an ADR
 8. Regulatory and compliance requirements (`CMP-*`)
 9. Non-functional requirements (`NFR-*`)
 
@@ -29,8 +29,9 @@ The single source of functional and non-functional requirements. Other specifica
 | `NFR-AUD-{NN}` | Auditability |
 | `NFR-ACC-{NN}` | Accessibility |
 | `NFR-OBS-{NN}` | Observability |
+| `NFR-DAT-{NN}` | Data integrity |
 
-Every requirement has a unique, stable ID, can be tested on its own, and names the specifications that implement it once they are written.
+Every requirement has a unique, stable ID and can be tested on its own. A requirement names nothing that implements it. Each specification section names the requirements it implements and each test names the requirement it verifies, so traceability runs from the implementation to the requirement.
 
 ## Functional areas
 
@@ -76,10 +77,20 @@ Every requirement, whatever its ID prefix, uses this format:
 
 **Acceptance:** {observable behaviour or measurable outcome}
 
-**Implemented by:** {specification references, added as work progresses}
+**Status:** {Proposed, Agreed or Validated, with who and when for Agreed and Validated}
 ```
 
 For example `### FR-INSP-01: Record an inspection`, `### NFR-PERF-01: API response time` or `### CMP-03: Retain inspection records`. Non-functional acceptance states a measurable target, such as "95% of API requests complete within 500 ms". Compliance acceptance states how compliance is shown, such as an audit record, a report or a retention job.
+
+The status records how far the business has confirmed the requirement. Code does not wait for it.
+
+| Status | Meaning |
+|---|---|
+| `Proposed` | Written, and not yet agreed by the business |
+| `Agreed` | The business has agreed the requirement before using what implements it |
+| `Validated` | The business has confirmed the requirement after using what implements it, at a demonstration or in acceptance testing |
+
+Agreement comes before validation because a requirement can read correctly and still turn out, once it is used, to mean something other than what the business intended. A requirement that use shows to be wrong is rewritten, and it is then agreed or validated again. The requirements under [Met by the template](#met-by-the-template) are set by the technology standards rather than by the business, so they have no status.
 
 ## Non-functional requirements
 
@@ -93,11 +104,11 @@ Replace each default with a target agreed with the business owner before deploym
 
 **Priority:** Must
 
-**Rationale:** Template default, to be confirmed with the business owner.
+**Rationale:** Template default.
 
 **Acceptance:** 95% of API requests complete within 500 ms, measured at the load balancer in `prod`.
 
-**Implemented by:** [12-aws-deployment.md](12-aws-deployment.md#monitoring) (alarm on target response time)
+**Status:** Proposed
 
 ### NFR-AVL-01: Service availability
 
@@ -105,11 +116,11 @@ Replace each default with a target agreed with the business owner before deploym
 
 **Priority:** Must
 
-**Rationale:** Template default, to be confirmed with the business owner.
+**Rationale:** Template default.
 
 **Acceptance:** 99.5% availability during operating hours, measured monthly in `prod`.
 
-**Implemented by:** [12-aws-deployment.md](12-aws-deployment.md#inputs) (`api_desired_count` and `db_multi_az`), [12-aws-deployment.md](12-aws-deployment.md#compute)
+**Status:** Proposed
 
 ### NFR-AVL-02: Recovery point
 
@@ -117,11 +128,11 @@ Replace each default with a target agreed with the business owner before deploym
 
 **Priority:** Must
 
-**Rationale:** Template default, to be confirmed with the business owner.
+**Rationale:** Template default.
 
 **Acceptance:** At most 1 hour of data is lost in `prod`, and at most 24 hours in `dev`.
 
-**Implemented by:** [12-aws-deployment.md](12-aws-deployment.md#database)
+**Status:** Proposed
 
 ### NFR-AVL-03: Recovery time
 
@@ -129,11 +140,11 @@ Replace each default with a target agreed with the business owner before deploym
 
 **Priority:** Must
 
-**Rationale:** Template default, to be confirmed with the business owner.
+**Rationale:** Template default.
 
 **Acceptance:** Service is restored within 4 hours in `prod`, and within 1 business day in `dev`.
 
-**Implemented by:** [12-aws-deployment.md](12-aws-deployment.md#database)
+**Status:** Proposed
 
 ### NFR-SCL-01: Users and record volumes
 
@@ -141,11 +152,11 @@ Replace each default with a target agreed with the business owner before deploym
 
 **Priority:** Must
 
-**Rationale:** Template default, to be confirmed with the business owner. It sets the default sizing.
+**Rationale:** Template default. It sets the default sizing.
 
 **Acceptance:** Tens to low hundreds of concurrent users. The application team sets the record volumes.
 
-**Implemented by:** [12-aws-deployment.md](12-aws-deployment.md#inputs) (`api_cpu`, `api_memory`, `db_instance_class` and `db_allocated_storage`)
+**Status:** Proposed
 
 ### Met by the template
 
@@ -161,8 +172,6 @@ Keep these requirements. The template meets them, and an application that change
 
 **Acceptance:** A request without a valid session or token returns 401, and one without a permitted role returns 403.
 
-**Implemented by:** [50-auth.md](50-auth.md), [20-api-scaffold.md](20-api-scaffold.md#authentication-and-authorisation)
-
 ### NFR-SEC-02: No tokens in the browser
 
 **Statement:** No access, ID or refresh token reaches the browser.
@@ -172,8 +181,6 @@ Keep these requirements. The template meets them, and an application that change
 **Rationale:** A token held in the browser can be taken by a script running in the page.
 
 **Acceptance:** The browser holds only the HttpOnly session cookie.
-
-**Implemented by:** [50-auth.md](50-auth.md#web-sign-in-the-api-as-backend-for-frontend)
 
 ### NFR-SEC-03: Encryption in transit
 
@@ -185,8 +192,6 @@ Keep these requirements. The template meets them, and an application that change
 
 **Acceptance:** Each connection refuses unencrypted traffic and TLS versions earlier than 1.2.
 
-**Implemented by:** [12-aws-deployment.md](12-aws-deployment.md#edge), [12-aws-deployment.md](12-aws-deployment.md#database)
-
 ### NFR-SEC-04: Encryption at rest
 
 **Statement:** Data is encrypted at rest in RDS, S3 and Secrets Manager.
@@ -196,8 +201,6 @@ Keep these requirements. The template meets them, and an application that change
 **Rationale:** Protects data held in storage.
 
 **Acceptance:** Encryption is on for the database, the buckets and the secrets in every environment.
-
-**Implemented by:** [12-aws-deployment.md](12-aws-deployment.md#database), [12-aws-deployment.md](12-aws-deployment.md#secrets)
 
 ### NFR-AUD-01: Audit trail
 
@@ -209,8 +212,6 @@ Keep these requirements. The template meets them, and an application that change
 
 **Acceptance:** The runtime database user cannot update or delete audit records, and the audit queries return records by each of these fields.
 
-**Implemented by:** [31-audit.md](31-audit.md#immutability), [31-audit.md](31-audit.md#queries)
-
 ### NFR-OBS-01: Logging and alarms
 
 **Statement:** The API writes structured JSON logs with correlation IDs, and alarms cover AWS's recommended ECS metrics.
@@ -220,8 +221,6 @@ Keep these requirements. The template meets them, and an application that change
 **Rationale:** Support staff can trace a request and learn of a failure before users report it.
 
 **Acceptance:** Every log line is a JSON object with a correlation ID, and each alarm in the monitoring set sends to the alarm topic.
-
-**Implemented by:** [20-api-scaffold.md](20-api-scaffold.md#logging), [12-aws-deployment.md](12-aws-deployment.md#monitoring)
 
 ### NFR-AVL-04: Backups and restore
 
@@ -233,8 +232,6 @@ Keep these requirements. The template meets them, and an application that change
 
 **Acceptance:** Backups are kept for `db_backup_retention_days`, and a restore has been completed in `test` before go-live.
 
-**Implemented by:** [12-aws-deployment.md](12-aws-deployment.md#database)
-
 ### NFR-ACC-01: Accessibility
 
 **Statement:** The web interface meets the accessibility level in the standard's configuration defaults (WCAG 2.2 level AA unless the application records another).
@@ -245,4 +242,12 @@ Keep these requirements. The template meets them, and an application that change
 
 **Acceptance:** Every page passes the automated accessibility checks in the pull request checks.
 
-**Implemented by:** [40-ui.md](40-ui.md#template-conventions), [13-delivery-pipeline.md](13-delivery-pipeline.md#pull-request-checks)
+### NFR-DAT-01: Change stamps
+
+**Statement:** Every record holds when it was created and when it was last changed, both set by the server, and a record that has never changed holds the same time in both.
+
+**Priority:** Must
+
+**Rationale:** One rule on every table lets incremental loads, sorting and filters use the last-changed time without a special case. Who changed what, and when, is held in the audit trail.
+
+**Acceptance:** A new record's two times are equal. Every change sets the last-changed time to the time of the change. No request can set either time.

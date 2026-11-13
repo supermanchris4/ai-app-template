@@ -34,7 +34,7 @@ A Feature moves up a horizon when the release before it is reviewed.
 
 1. **Context.** What the application is, and where its requirements come from.
 2. **Outcome.** The Outcome the application serves, with the fields in the hierarchy table.
-3. **Epics.** Each with its type and a one-line pitch, linked to its folder.
+3. **Epics.** Each with its type, the functional areas it builds and a one-line pitch, linked to its folder.
 4. **Releases and implementation sequence.** Which Features each release groups, and a Mermaid diagram of the order, without dates or durations.
 5. **Standard tasks.** The table below.
 6. **Dependencies.** What the application needs from other teams, and which Feature needs it.
@@ -47,7 +47,7 @@ Update the plan when a release is planned or when feedback on a release changes 
 
 - **Each release takes Features from several Epics.** A capability is built out over several releases, so feedback on an early release can still change it.
 - **Each release runs and is accepted locally.** AWS environments join when their dependencies are in place and do not hold up a release.
-- **A release is accepted** when its pull request checks pass and its business reviewers have used it. Once `dev` exists, the release is also deployed there and passes its health check. Feedback updates the requirements and specifications, then the plan for the next release.
+- **A release is accepted** when its pull request checks pass and its business reviewers have used it. Once `dev` exists, the release is also deployed there and passes its health check. The reviewers confirm or change each requirement the release implements: a confirmed requirement becomes `Validated` ([requirement status](../../specs/02-requirements.md#entry-format)), and feedback updates the requirements and specifications, then the plan for the next release.
 
 ## Standard tasks
 
@@ -56,7 +56,7 @@ Every business Story is delivered through these Tasks, in order. A Feature file 
 | Task | Layer | Delivers | Done when |
 |---|---|---|---|
 | T1 | Specifications | Requirements, rules, entities, tables, endpoints, pages and roles in the application stubs | Reviewed before any code |
-| T2 | Database | Migrations for the tables, constraints and indexes in [30-data-model.md](../../specs/30-data-model.md), the models, seed data and synthetic data | Migrations apply cleanly from empty and from the previous release; constraint tests pass against PostgreSQL |
+| T2 | Database | Schema migrations for the tables, constraints and indexes in [30-data-model.md](../../specs/30-data-model.md), the models, seed data and synthetic data | Schema migrations apply cleanly from empty and from the previous release; constraint tests pass against PostgreSQL |
 | T3 | Domain and services | Domain models, enums and exceptions; repositories; services holding the rules, recording audit and storing outcomes with their configuration version | Unit tests per rule, with the coverage thresholds in [99-generation-rules.md](../../specs/99-generation-rules.md#tests) |
 | T4 | API | Request and response schemas with ranges, routes with roles, and the regenerated OpenAPI document | Integration tests per endpoint, including 401 and 403; the contract check passes |
 | T5 | Web interface | Pages built on the regenerated client, as [40-ui.md](../../specs/40-ui.md) documents them | Component tests, end-to-end tests of the Story's journey and the accessibility checks pass |

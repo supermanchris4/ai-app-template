@@ -2,7 +2,7 @@
 
 The starter repository for applications built with AI coding assistants, such as Claude Code. An application's repository is created from this template and then owns its copy. Applications have a web interface, an API running in a container and a PostgreSQL database, hosted on AWS with source code and pipelines in GitHub.
 
-The template implements the AI application standard, held in the separate `ai-app-standard` repository. The standard holds the architecture, the decisions behind it and the developer setup guide. This repository holds only what an application needs in its own repository, and refers to the standard for the reasons behind it.
+The template implements the AI application standard, held in the separate `ai-app-standard` repository. The standard holds the architecture and the decisions behind it. Set up your workstation by following its developer setup guide (`docs/developer-setup.md` in `ai-app-standard`) before you clone a repository made from this template. This repository holds only what an application needs in its own repository, and refers to the standard for the reasons behind it.
 
 To create an application from the template, follow [TEMPLATE_USAGE.md](TEMPLATE_USAGE.md).
 

@@ -1,10 +1,12 @@
 # Authentication and authorisation
 
-How internal users, external users and other systems sign in and what they may do. The implementation is in [20-api-scaffold.md](20-api-scaffold.md#authentication-and-authorisation). The model follows Standard D-03, D-04, D-10 and D-18.
+How internal users, external users and other systems sign in and what they may do. The implementation is in [20-api-scaffold.md](20-api-scaffold.md#authentication-and-authorisation). The model follows Standard ADR-0003, ADR-0004, ADR-0010 and ADR-0018.
+
+**Requirements:** [NFR-SEC-01](02-requirements.md#nfr-sec-01-authenticated-and-authorised-access)
 
 ## Identity providers
 
-The API trusts one or two OpenID Connect issuers, each configured by its discovery URL ([20-api-scaffold.md](20-api-scaffold.md#settings)). Entra ID is the default internal issuer and Entra External ID the default external issuer (Standard D-04). An application with no external users configures only the internal issuer.
+The API trusts one or two OpenID Connect issuers, each configured by its discovery URL ([20-api-scaffold.md](20-api-scaffold.md#settings)). Entra ID is the default internal issuer and Entra External ID the default external issuer (Standard ADR-0004). An application with no external users configures only the internal issuer.
 
 | Who | Issuer | How they reach the API |
 |---|---|---|
@@ -18,6 +20,8 @@ The API platform package implements this specification for internal users and ot
 Developers' machines use the local mock identity provider in place of both ([11-local-development.md](11-local-development.md#local-mock-identity-provider)). The API signs in and validates through the same code.
 
 ## Web sign-in: the API as backend-for-frontend
+
+**Requirements:** [NFR-SEC-02](02-requirements.md#nfr-sec-02-no-tokens-in-the-browser)
 
 The web interface never handles tokens. The API signs people in and holds the result in a server-side session, and the browser holds only a session cookie that scripts cannot read. This follows the backend-for-frontend pattern that RFC 10017, *OAuth 2.0 for Browser-Based Applications*, ranks most secure.
 

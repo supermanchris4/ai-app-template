@@ -13,6 +13,8 @@ These come from [99-generation-rules.md](99-generation-rules.md) and always appl
 3. Thresholds and rule parameters are versioned configuration, never literals in code.
 4. Services raise domain exceptions, do not commit transactions and record an audit event for every auditable operation.
 
+The rules in [23-application-rules.md](23-application-rules.md) also always apply. This file refers to them by ID, such as AR-18, rather than restating them, and holds only the application's own rules.
+
 ## Sections to complete
 
 1. **Entities and their lifecycle.** States, permitted transitions and what triggers each, and invariants.
@@ -27,6 +29,8 @@ These come from [99-generation-rules.md](99-generation-rules.md) and always appl
 
 ```
 ### {Entity}
+
+**Requirements:** {requirement IDs}
 
 **States:** {list}
 

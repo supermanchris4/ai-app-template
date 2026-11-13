@@ -3,6 +3,7 @@
 .env.*
 !.env.example
 *.tfvars
+infra/local/ca-certificates.crt
 
 # Editor and OS files
 .vscode/

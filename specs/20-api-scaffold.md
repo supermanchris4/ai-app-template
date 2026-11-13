@@ -98,11 +98,13 @@ There is no setting that turns authentication off, and no cross-origin (CORS) se
 
 - SQLAlchemy 2.x with `pool_pre_ping`, a pool of 5 and an overflow of 10.
 - The API connects as the application's runtime database user, which can read and write data but cannot change the schema. Only the migration step connects as the migration user ([12-aws-deployment.md](12-aws-deployment.md#database)).
-- In deployed environments, `database.py` fetches the runtime user's credentials from Secrets Manager (`DATABASE_CREDENTIALS_SECRET_ARN`) when it opens a connection, and reuses them for `DATABASE_CREDENTIALS_CACHE_SECONDS`. If a connection fails authentication, it fetches the credentials again once before failing. A rotated password is therefore picked up without a redeployment (Standard D-13).
+- In deployed environments, `database.py` fetches the runtime user's credentials from Secrets Manager (`DATABASE_CREDENTIALS_SECRET_ARN`) when it opens a connection, and reuses them for `DATABASE_CREDENTIALS_CACHE_SECONDS`. If a connection fails authentication, it fetches the credentials again once before failing. A rotated password is therefore picked up without a redeployment (Standard ADR-0013).
 - Connections use TLS with `sslmode=verify-full`, verifying the server against the Amazon RDS certificate bundle copied into the image.
 - The session dependency yields a session, commits on success, rolls back on exception and always closes the session. It is declared with `Depends(get_db, scope="function")`, so the commit happens before the response is sent. With FastAPI's default scope, the code after `yield` runs once the response has gone, and a client could act on a write that is not yet committed, or be told a write succeeded when its commit then fails.
 
 ## Authentication and authorisation
+
+**Requirements:** [NFR-SEC-01](02-requirements.md#nfr-sec-01-authenticated-and-authorised-access)
 
 The model is in [50-auth.md](50-auth.md). The API platform package implements it as follows; the modules named are within `ai_app_platform`. Version 0.1 implements the internal issuer only: the external issuer's settings and discovery are in place, but its sign-in, sessions and tokens are not, so an application with external users writes them until the standard's work plan item F03.5 provides them.
 
@@ -171,6 +173,8 @@ There is no rate limiting in the API. Rate-based rules are applied by AWS WAF at
 
 ## Logging
 
+**Requirements:** [NFR-OBS-01](02-requirements.md#nfr-obs-01-logging-and-alarms)
+
 The platform's `logging_config` configures one JSON formatter for all loggers, writing one JSON object per line to standard output. Every line includes the timestamp (UTC, ISO 8601), level, logger, message, correlation ID and request ID, plus every field passed through `extra`. Personal information (including names, email addresses and subject identifiers), tokens, cookies, passwords and connection strings are never logged, and the formatter drops any `extra` field named in its deny list (`authorization`, `cookie`, `token`, `password`, `email`, `name`, `oid`, `subject`). Path templates are logged rather than full paths, so identifiers in URLs are not.
 
 ## Health endpoint
@@ -184,7 +188,7 @@ The container health check, the load balancer health check and the pipeline's ch
 
 ## Directory lookup
 
-`GET /api/v1/directory/users?search={text}` finds internal users in the internal issuer's directory (Microsoft Graph for Entra ID) for pickers in the web interface. It is optional, and the only path to the directory; it is not yet in the platform package, so an application that needs it writes it (the standard's work plan item F03.4); the web interface never calls the directory directly (Standard D-10).
+`GET /api/v1/directory/users?search={text}` finds internal users in the internal issuer's directory (Microsoft Graph for Entra ID) for pickers in the web interface. It is optional, and the only path to the directory; it is not yet in the platform package, so an application that needs it writes it (the standard's work plan item F03.4); the web interface never calls the directory directly (Standard ADR-0010).
 
 - Available only when `DIRECTORY_ENABLED` is true, and to the roles listed for it in [21-api.md](21-api.md).
 - Requires at least three characters of search text and returns at most 25 people.
@@ -199,6 +203,8 @@ The container health check, the load balancer health check and the pipeline's ch
 2. A runtime stage, from the same base image, copies only the virtual environment, the application code and the RDS certificate bundle. It runs as a non-root user and starts `uvicorn` on `0.0.0.0:8000`.
 
 The image has a container health check calling `/api/health`. The same image runs the API, the migration task (`alembic upgrade head`) and scheduled jobs (`python -m apps.api.jobs.{job}`).
+
+**Network certificate.** Some networks inspect encrypted traffic and re-sign it with their own root certificate. Each build step that downloads packages mounts an optional build secret, `corporate_ca`, with `RUN --mount=type=secret,id=corporate_ca,required=false`. When the secret is present, the step sets `SSL_CERT_FILE` (for uv) and `GIT_SSL_CAINFO` (for git, which uv runs to fetch the platform package, and which on Debian does not read `SSL_CERT_FILE`) to it for that step only. The secret is a full certificate bundle, because `SSL_CERT_FILE` replaces uv's trusted certificates rather than adding to them. On a developer's machine, Compose supplies it ([11-local-development.md](11-local-development.md#image-builds)). Pipeline builds supply no secret. A secret mount is not stored in any image layer, so the image is the same wherever it is built.
 
 ## Dependencies
 
@@ -232,6 +238,7 @@ The platform's own behaviour is tested in `ai-app-platform`; the application's t
 ## Acceptance criteria
 
 - The API starts in Docker Compose and `GET /api/health` returns 200 when the database is available and 503 when it is not.
+- The API image builds in the pipeline without the `corporate_ca` secret, and on a developer's machine with it. No file in the built image comes from the secret.
 - The API refuses to start in a deployed environment with an issuer that is not on HTTPS at an allowed host, without a client certificate, without TLS verification or with local database credentials.
 - Signing in through `/api/auth/login` sets a `__Host-session` cookie that is `HttpOnly`, `Secure` and `SameSite=Lax`, and no token reaches the browser.
 - Every endpoint except `/api/health` and `/api/auth/` returns 401 without a valid token or session, and 403 without a permitted role.
