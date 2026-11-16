@@ -57,7 +57,7 @@ flowchart LR
 | Node | 24 (LTS) | `apps/web/.nvmrc` and `engines` in `apps/web/package.json` |
 | PostgreSQL | 17 | The Terraform RDS engine version and the `postgres` image in `infra/local/docker-compose.yml` |
 
-These are the template's working versions (Standard configuration default C-02). Each is pinned in the places listed and changed in all of them in the same change. Dependabot proposes patch and minor updates; a major version change is a deliberate change across the listed files.
+These are the template's working versions (Standard configuration default C-02). Each is pinned in the places listed and changed in all of them in the same change. Dependabot proposes patch and minor updates; a major version change is a deliberate change across the listed files. A new Python version such as 3.14 counts as major here, although Dependabot sees it as minor, so `dependabot.yml` ignores Python's minor and major updates.
 
 ## Platform packages
 
